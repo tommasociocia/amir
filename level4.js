@@ -4,8 +4,9 @@ window.NetBuilderLevelFactories.level4 = ({ validateFirewall, firewallPairs }) =
   difficulty: 45,
   available: ["pc", "switch", "firewall", "router", "internet"],
   objective: [
-    "Proteggi una LAN prima di uscire verso Internet.",
+    "Proteggi la LAN prima dell'uscita verso Internet.",
     "",
+    "Requisiti:",
     "- 2 PC collegati allo switch",
     "- switch collegato al firewall",
     "- firewall collegato al router",

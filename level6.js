@@ -4,15 +4,16 @@ window.NetBuilderLevelFactories.level6 = ({ validateClientServerLan, clientServe
   difficulty: 18,
   available: ["pc", "switch", "server"],
   objective: [
-    "Costruisci una LAN client-server semplice.",
+    "Costruisci una LAN client-server.",
     "",
+    "Requisiti:",
     "- 1 switch centrale",
     "- 3 PC client",
     "- 1 server",
     "- tutti collegati allo switch",
     "- esattamente 4 cavi dritti",
     "",
-    "La prova testa la comunicazione PC -> Server.",
+    "La prova testa la comunicazione PC -> server.",
   ].join("\n"),
   checks: [
     "3 PC esatti",
