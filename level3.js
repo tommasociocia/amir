@@ -1,6 +1,7 @@
 ﻿window.NetBuilderLevelFactories = window.NetBuilderLevelFactories || {};
 window.NetBuilderLevelFactories.level3 = ({ validateRing, ringPair }) => ({
   title: "Topologia ad anello",
+  difficulty: 35,
   available: ["pc"],
   objective: [
     "Ricostruisci una topologia storica ad anello.",

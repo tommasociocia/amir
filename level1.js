@@ -1,6 +1,7 @@
 ﻿window.NetBuilderLevelFactories = window.NetBuilderLevelFactories || {};
 window.NetBuilderLevelFactories.level1 = ({ validateLanStar, pcPairs }) => ({
   title: "LAN a stella estesa",
+  difficulty: 10,
   available: ["pc", "switch"],
   objective: [
     "Crea una LAN broadcast a stella, come nelle slide sulle reti locali.",

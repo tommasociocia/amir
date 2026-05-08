@@ -668,13 +668,115 @@ function validateSchool() {
   const core = switches.find((sw) => getConnectedDevices(sw.id).filter((d) => d.type === "switch").length >= 3);
   const accessSwitches = core ? switches.filter((sw) => sw.id !== core.id && areConnected(sw.id, core.id)) : [];
   if (pcs.length >= 6) passed.push(0);
-  if (switches.length === 4 && accessSwitches.length === 3 && accessSwitches.every((sw) => getConnectedDevices(sw.id).filter((d) => d.type === "pc").length >= 2)) passed.push(1);
-  if (core && server && areConnected(core.id, server.id)) passed.push(2);
-  if (core && firewall && router && wan && areConnected(core.id, firewall.id) && areConnected(firewall.id, router.id) && areConnected(router.id, wan.id)) passed.push(3);
+  if (switches.length === 4 && core && accessSwitches.length === 3) passed.push(1);
+  if (passed.includes(1) && accessSwitches.every((sw) => getConnectedDevices(sw.id).filter((d) => d.type === "pc").length >= 2)) passed.push(2);
+  if (core && server && areConnected(core.id, server.id)) passed.push(3);
+  if (core && firewall && router && wan && areConnected(core.id, firewall.id) && areConnected(firewall.id, router.id) && areConnected(router.id, wan.id)) passed.push(4);
   if (!passed.includes(0)) return fail(`Servono almeno 6 PC, ora ne hai ${pcs.length}.`, passed);
-  if (!passed.includes(1)) return fail("Servono 3 switch aula collegati al core, con almeno 2 PC per aula.", passed);
-  if (!passed.includes(2)) return fail("Collega il server allo switch core centrale.", passed);
-  if (!passed.includes(3)) return fail("L'uscita corretta e': core -> firewall -> router -> Internet.", passed);
+  if (!passed.includes(1)) return fail("Devono esserci 4 switch: 1 core e 3 switch aula collegati al core.", passed);
+  if (!passed.includes(2)) return fail("Ogni switch aula deve avere almeno 2 PC collegati.", passed);
+  if (!passed.includes(3)) return fail("Collega il server direttamente allo switch core.", passed);
+  if (!passed.includes(4)) return fail("Completa l'uscita in sequenza: core -> firewall -> router -> Internet.", passed);
+  return ok(passed);
+}
+
+function validateClientServerLan() {
+  const pcs = devicesOf("pc");
+  const switches = devicesOf("switch");
+  const servers = devicesOf("server");
+  const server = servers[0];
+  const passed = [];
+  if (pcs.length === 3) passed.push(0);
+  if (switches.length === 1) passed.push(1);
+  if (servers.length === 1) passed.push(2);
+  if (
+    switches[0]
+    && server
+    && pcs.length === 3
+    && [...pcs, server].every((host) => {
+      const links = getConnectedDevices(host.id);
+      return links.length === 1 && links[0]?.type === "switch";
+    })
+  ) passed.push(3);
+  if (state.cables.length === 4 && state.cables.every((cable) => cable.type === "straight" && cable.valid)) passed.push(4);
+  if (!passed.includes(0)) return fail(`Servono esattamente 3 PC, ora ne hai ${pcs.length}.`, passed);
+  if (!passed.includes(1)) return fail("Serve uno switch centrale unico.", passed);
+  if (!passed.includes(2)) return fail(`Serve esattamente 1 server, ora ne hai ${servers.length}.`, passed);
+  if (!passed.includes(3)) return fail("Ogni PC e il server devono essere collegati solo allo switch.", passed);
+  if (!passed.includes(4)) return fail("Servono esattamente 4 cavi dritti validi.", passed);
+  return ok(passed);
+}
+
+function validateSecureWan() {
+  const pcs = devicesOf("pc");
+  const switches = devicesOf("switch");
+  const router = devicesOf("router")[0];
+  const firewall = devicesOf("firewall")[0];
+  const wan = devicesOf("internet")[0];
+  const passed = [];
+  if (pcs.length === 6) passed.push(0);
+  if (switches.length === 2 && switches.every((sw) => getConnectedDevices(sw.id).filter((d) => d.type === "pc").length === 3)) passed.push(1);
+  if (router && switches.length === 2 && switches.every((sw) => areConnected(sw.id, router.id))) passed.push(2);
+  if (
+    router
+    && firewall
+    && wan
+    && areConnected(router.id, firewall.id)
+    && areConnected(firewall.id, wan.id)
+    && getConnectedDevices(firewall.id).length === 2
+  ) passed.push(3);
+  if (
+    router
+    && firewall
+    && wan
+    && switches.every((sw) => !areConnected(sw.id, firewall.id) && !areConnected(sw.id, wan.id))
+    && pcs.every((pc) => {
+      const path = findPath(pc.id, wan.id);
+      return path && path.includes(router.id) && path.includes(firewall.id);
+    })
+  ) passed.push(4);
+  if (!passed.includes(0)) return fail(`Servono esattamente 6 PC, ora ne hai ${pcs.length}.`, passed);
+  if (!passed.includes(1)) return fail("Servono 2 switch con esattamente 3 PC collegati ciascuno.", passed);
+  if (!passed.includes(2)) return fail("Il router deve essere collegato ai due switch.", passed);
+  if (!passed.includes(3)) return fail("Completa la catena WAN: router -> firewall -> Internet.", passed);
+  if (!passed.includes(4)) return fail("Nessun bypass: gli switch non devono andare diretti a firewall/Internet.", passed);
+  return ok(passed);
+}
+
+function validateCampusEnterprise() {
+  const pcs = devicesOf("pc");
+  const switches = devicesOf("switch");
+  const servers = devicesOf("server");
+  const firewall = devicesOf("firewall")[0];
+  const router = devicesOf("router")[0];
+  const wan = devicesOf("internet")[0];
+  const passed = [];
+  const core = switches.find((sw) => getConnectedDevices(sw.id).filter((d) => d.type === "switch").length >= 4);
+  const accessSwitches = core ? switches.filter((sw) => sw.id !== core.id && areConnected(sw.id, core.id)) : [];
+
+  if (pcs.length >= 8) passed.push(0);
+  if (switches.length === 5 && core && accessSwitches.length === 4) passed.push(1);
+  if (passed.includes(1) && accessSwitches.every((sw) => getConnectedDevices(sw.id).filter((d) => d.type === "pc").length >= 2)) passed.push(2);
+  if (core && servers.length === 2 && servers.every((srv) => areConnected(core.id, srv.id))) passed.push(3);
+  if (core && firewall && router && wan && areConnected(core.id, firewall.id) && areConnected(firewall.id, router.id) && areConnected(router.id, wan.id)) passed.push(4);
+  if (
+    passed.includes(1)
+    && firewall
+    && router
+    && wan
+    && accessSwitches.every((sw) => !areConnected(sw.id, firewall.id) && !areConnected(sw.id, router.id) && !areConnected(sw.id, wan.id))
+    && pcs.every((pc) => {
+      const path = findPath(pc.id, wan.id);
+      return path && path.includes(core.id) && path.includes(firewall.id) && path.includes(router.id);
+    })
+  ) passed.push(5);
+
+  if (!passed.includes(0)) return fail(`Servono almeno 8 PC, ora ne hai ${pcs.length}.`, passed);
+  if (!passed.includes(1)) return fail("Servono 5 switch: 1 core e 4 switch di accesso collegati al core.", passed);
+  if (!passed.includes(2)) return fail("Ogni switch di accesso deve avere almeno 2 PC collegati.", passed);
+  if (!passed.includes(3)) return fail(`Servono 2 server collegati al core, ora ne hai ${servers.length}.`, passed);
+  if (!passed.includes(4)) return fail("L'uscita deve essere: core -> firewall -> router -> Internet.", passed);
+  if (!passed.includes(5)) return fail("Nessun bypass dagli switch di accesso verso firewall/router/Internet.", passed);
   return ok(passed);
 }
 
@@ -710,6 +812,34 @@ function schoolPairs() {
   if (pc && server) pairs.push({ src: pc.id, dst: server.id });
   if (pc && wan) pairs.push({ src: pc.id, dst: wan.id });
   return pairs;
+}
+
+function clientServerPairs() {
+  const pc = devicesOf("pc")[0];
+  const server = devicesOf("server")[0];
+  return pc && server ? [{ src: pc.id, dst: server.id }] : pcPairs();
+}
+
+function secureWanPairs() {
+  const switches = devicesOf("switch").slice(0, 2);
+  const wan = devicesOf("internet")[0];
+  const a = switches[0] ? getConnectedDevices(switches[0].id).find((d) => d.type === "pc") : null;
+  const b = switches[1] ? getConnectedDevices(switches[1].id).find((d) => d.type === "pc") : null;
+  const pairs = [];
+  if (a && b) pairs.push({ src: a.id, dst: b.id });
+  if (a && wan) pairs.push({ src: a.id, dst: wan.id });
+  return pairs.length ? pairs : pcPairs();
+}
+
+function campusEnterprisePairs() {
+  const pcs = devicesOf("pc");
+  const servers = devicesOf("server");
+  const wan = devicesOf("internet")[0];
+  const pairs = [];
+  if (pcs[0] && servers[0]) pairs.push({ src: pcs[0].id, dst: servers[0].id });
+  if (pcs[1] && wan) pairs.push({ src: pcs[1].id, dst: wan.id });
+  else if (pcs[0] && wan) pairs.push({ src: pcs[0].id, dst: wan.id });
+  return pairs.length ? pairs : pcPairs();
 }
 
 function ok(passed) {
@@ -908,26 +1038,55 @@ function configureLevels() {
   const factories = window.NetBuilderLevelFactories || {};
   const context = {
     validateLanStar,
+    validateClientServerLan,
     validateTwoSubnets,
     validateRing,
     validateFirewall,
+    validateSecureWan,
     validateSchool,
+    validateCampusEnterprise,
     pcPairs,
+    clientServerPairs,
     routedPair,
     ringPair,
     firewallPairs,
     schoolPairs,
+    secureWanPairs,
+    campusEnterprisePairs,
   };
-  const orderedKeys = ["level1", "level2", "level3", "level4", "level5"];
   levels.length = 0;
-  orderedKeys.forEach((key) => {
-    const makeLevel = factories[key];
-    if (typeof makeLevel === "function") {
-      levels.push(makeLevel(context));
-    }
+  const builtLevels = [];
+  Object.entries(factories).forEach(([key, makeLevel]) => {
+    if (typeof makeLevel !== "function") return;
+    const level = makeLevel(context);
+    if (!level || typeof level !== "object") return;
+    const difficulty = Number(level.difficulty ?? 999);
+    builtLevels.push({ key, level, difficulty });
   });
+  builtLevels
+    .sort((a, b) => (a.difficulty - b.difficulty) || a.key.localeCompare(b.key))
+    .forEach(({ level }) => levels.push(level));
+}
+
+function syncProgressWithLevels() {
+  const signature = levels
+    .map((level) => `${level.title}:${Number(level.difficulty ?? 999)}`)
+    .join("|");
+  const storedSignature = localStorage.getItem("netbuilder-level-signature");
+  if (storedSignature && storedSignature !== signature) {
+    state.completed = new Set();
+    state.savedLevels = {};
+    localStorage.setItem("netbuilder-completed", "[]");
+    localStorage.setItem("netbuilder-levels", "{}");
+  }
+  localStorage.setItem("netbuilder-level-signature", signature);
 }
 
 configureLevels();
+if (!levels.length) {
+  showHint("Errore caricamento livelli: controlla i file level1.js ... level8.js", "warn");
+  throw new Error("No levels loaded");
+}
+syncProgressWithLevels();
 init();
 

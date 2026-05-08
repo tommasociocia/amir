@@ -1,6 +1,7 @@
 ﻿window.NetBuilderLevelFactories = window.NetBuilderLevelFactories || {};
 window.NetBuilderLevelFactories.level2 = ({ validateTwoSubnets, routedPair }) => ({
   title: "Internetworking LAN",
+  difficulty: 25,
   available: ["pc", "switch", "router"],
   objective: [
     "Collega due LAN diverse usando il livello Network OSI.",

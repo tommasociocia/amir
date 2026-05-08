@@ -1,6 +1,7 @@
 ﻿window.NetBuilderLevelFactories = window.NetBuilderLevelFactories || {};
 window.NetBuilderLevelFactories.level4 = ({ validateFirewall, firewallPairs }) => ({
   title: "Perimetro LAN-WAN",
+  difficulty: 45,
   available: ["pc", "switch", "firewall", "router", "internet"],
   objective: [
     "Proteggi una LAN prima di uscire verso Internet.",
