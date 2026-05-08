@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetBuilder - Costruisci la rete</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">NB</span>
+      <div>
+        <h1>NetBuilder</h1>
+        <p>Laboratorio TPSIT sulle reti reali</p>
+      </div>
+    </div>
+
+    <nav class="level-tabs" id="levelTabs" aria-label="Livelli"></nav>
+
+    <div class="stats" aria-label="Statistiche">
+      <div class="stat"><span>Livello</span><strong id="statLevel">1</strong></div>
+      <div class="stat"><span>Punti</span><strong id="statScore">0</strong></div>
+      <div class="stat"><span>Nodi</span><strong id="statDevices">0</strong></div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="toolbox">
+      <section class="quick-help">
+        <h2>Comandi ✨</h2>
+        <p>👆 Click su un dispositivo per inserirlo. 🔗 Click su due nodi per collegarli. 🖱️ Trascina un nodo per sistemarlo. 🗑️ Doppio click elimina.</p>
+      </section>
+
+      <section>
+        <h2>Dispositivi 🧰</h2>
+        <div class="device-palette" id="devicePalette"></div>
+      </section>
+
+      <section>
+        <h2>Cavi 🔌</h2>
+        <div class="cable-tools">
+          <button class="cable-tool is-active" id="straightCable" type="button" data-cable="straight">
+            <span class="cable-sample straight"></span>
+            Dritto
+          </button>
+          <button class="cable-tool" id="crossCable" type="button" data-cable="cross">
+            <span class="cable-sample cross"></span>
+            Incrociato
+          </button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <div class="workspace-toolbar">
+        <div>
+          <p class="eyebrow">Scenario</p>
+          <h2 id="levelTitle"></h2>
+        </div>
+        <div class="actions">
+          <button class="btn secondary" id="hintBtn" type="button">💡 Indizio</button>
+          <button class="btn secondary" id="resetBtn" type="button">🔄 Reset</button>
+          <button class="btn primary" id="testBtn" type="button">🚀 Testa rete</button>
+        </div>
+      </div>
+
+      <div class="board-wrap" id="boardWrap">
+        <svg id="board" viewBox="0 0 1100 720" role="img" aria-label="Area di costruzione della rete">
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" class="grid-line"></path>
+            </pattern>
+            <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#263238" flood-opacity="0.18"></feDropShadow>
+            </filter>
+          </defs>
+          <rect width="1100" height="720" fill="url(#grid)"></rect>
+          <g id="cableLayer"></g>
+          <g id="packetLayer"></g>
+          <g id="deviceLayer"></g>
+        </svg>
+      </div>
+    </section>
+
+    <aside class="mission-panel">
+      <section class="mission-card">
+        <p class="eyebrow">Obiettivo</p>
+        <div id="objectiveText"></div>
+      </section>
+
+      <section class="mission-card">
+        <p class="eyebrow">Verifica</p>
+        <div class="checklist" id="checklist"></div>
+      </section>
+
+      <section class="mission-card">
+        <p class="eyebrow">Console rete</p>
+        <div class="network-log" id="networkLog"></div>
+      </section>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true">
+    <button type="button" data-action="move">🖱️ Sposta</button>
+    <button type="button" data-action="delete">🗑️ Elimina</button>
+  </div>
+
+  <dialog class="result-modal" id="resultModal">
+    <div class="result-icon" id="resultIcon"></div>
+    <h2 id="resultTitle"></h2>
+    <p id="resultBody"></p>
+    <div class="result-info" id="resultInfo"></div>
+    <button class="btn primary" id="resultBtn" type="button">Continua</button>
+  </dialog>
+
+  <script src="script.js"></script>
+</body>
+</html>
