@@ -15,12 +15,12 @@ const NODE_W = 112;
 const NODE_H = 86;
 
 const deviceMeta = {
-  pc: { name: "PC", emoji: "ðŸ’»", layer: "Host", ports: 1, cablePeers: ["switch", "router", "pc"] },
-  switch: { name: "Switch", emoji: "ðŸ”€", layer: "L2", ports: 8, cablePeers: ["pc", "router", "server", "firewall", "switch"] },
-  router: { name: "Router", emoji: "ðŸ“¡", layer: "L3", ports: 4, cablePeers: ["switch", "firewall", "internet", "pc"] },
-  firewall: { name: "Firewall", emoji: "ðŸ›¡ï¸", layer: "L3/4", ports: 2, cablePeers: ["switch", "router"] },
-  server: { name: "Server", emoji: "ðŸ—„ï¸", layer: "Host", ports: 2, cablePeers: ["switch"] },
-  internet: { name: "Internet", emoji: "ðŸŒ", layer: "Rete", ports: 4, cablePeers: ["router"] },
+  pc: { name: "PC", emoji: "🖥️", layer: "Host", ports: 1, cablePeers: ["switch", "router", "pc"] },
+  switch: { name: "Switch", emoji: "🔀", layer: "L2", ports: 8, cablePeers: ["pc", "router", "server", "firewall", "switch"] },
+  router: { name: "Router", emoji: "📡", layer: "L3", ports: 4, cablePeers: ["switch", "firewall", "internet", "pc"] },
+  firewall: { name: "Firewall", emoji: "🛑", layer: "L3/4", ports: 2, cablePeers: ["switch", "router"] },
+  server: { name: "Server", emoji: "🗄️", layer: "Host", ports: 2, cablePeers: ["switch"] },
+  internet: { name: "Internet", emoji: "🌍", layer: "Rete", ports: 4, cablePeers: ["router"] },
 };
 
 const levels = [
@@ -268,7 +268,7 @@ function loadLevel(index) {
     card.classList.toggle("is-disabled", !levels[index].available.includes(card.dataset.type));
     card.querySelector(".port-text").textContent = `${deviceMeta[card.dataset.type].layer} - ${maxPorts(card.dataset.type)} porte`;
   });
-  addLog(`ðŸŽ¯ Scenario caricato: ${levels[index].title}`, "ok");
+  addLog(`🎯 Scenario caricato: ${levels[index].title}`, "ok");
   state.initialized = true;
   render();
 }
@@ -284,7 +284,7 @@ function resetLevel() {
   resetStateOnly(true);
   delete state.savedLevels[state.level];
   saveProgress();
-  addLog("ðŸ”„ Area ripulita. Ricostruisci la rete seguendo l'obiettivo.", "warn");
+  addLog("🧹 Area ripulita. Ricostruisci la rete seguendo l'obiettivo.", "warn");
   render();
 }
 
@@ -406,7 +406,7 @@ function removeDevice(id) {
   state.selectedDevice = null;
   state.contextDevice = null;
   state.connectingFrom = null;
-  addLog(`ðŸ—‘ï¸ ${device?.label || "Nodo"} rimosso.`, "warn");
+  addLog(`🗑️ ${device?.label || "Nodo"} rimosso.`, "warn");
   saveCurrentLevelState();
   render();
 }
@@ -416,7 +416,7 @@ function selectCable(type) {
   document.querySelectorAll(".cable-tool").forEach((btn) => {
     btn.classList.toggle("is-active", btn.dataset.cable === type);
   });
-  showHint(type === "straight" ? "ðŸ”Œ Cavo dritto selezionato." : "ðŸ”€ Cavo incrociato selezionato.", "ok");
+  showHint(type === "straight" ? "➖ Cavo dritto selezionato." : "🔀 Cavo incrociato selezionato.", "ok");
 }
 
 function render() {
@@ -444,7 +444,7 @@ function renderCable(cable) {
   line.addEventListener("click", (event) => {
     event.stopPropagation();
     state.cables = state.cables.filter((item) => item.id !== cable.id);
-    addLog("ðŸ§¹ Cavo rimosso.", "warn");
+    addLog("✂️ Cavo rimosso.", "warn");
     saveCurrentLevelState();
     render();
   });
@@ -506,7 +506,7 @@ function onDeviceClick(id) {
   if (!state.connectingFrom) {
     state.connectingFrom = id;
     state.selectedDevice = id;
-    showHint("ðŸ§© Ora clicca il secondo dispositivo da collegare.", "ok");
+    showHint("🔌 Ora clicca il secondo dispositivo da collegare.", "ok");
     render();
     return;
   }
@@ -526,17 +526,17 @@ function onDeviceClick(id) {
 
 function addCable(from, to) {
   if (state.cables.some((cable) => sameCable(cable, from, to))) {
-    addLog("âš ï¸ Questi due dispositivi sono gia collegati.", "warn");
+    addLog("✖️ Questi due dispositivi sono gia collegati.", "warn");
     return;
   }
   if (usedPorts(from) >= maxPorts(getDevice(from).type) || usedPorts(to) >= maxPorts(getDevice(to).type)) {
-    addLog("ðŸš§ Una porta e' esaurita: rimuovi un cavo o usa un altro dispositivo.", "err");
+    addLog("🚧 Una porta e' esaurita: rimuovi un cavo o usa un altro dispositivo.", "err");
     return;
   }
 
   const valid = isCableRealistic(from, to, state.selectedCable);
   state.cables.push({ id: `c-${crypto.randomUUID()}`, from, to, type: state.selectedCable, valid });
-  addLog(valid ? "âœ… Collegamento creato." : "âŒ Collegamento sospetto: il tipo di cavo non e' realistico per questi dispositivi.", valid ? "ok" : "err");
+  addLog(valid ? "✓ Collegamento creato." : "✗ Collegamento sospetto: il tipo di cavo non e' realistico per questi dispositivi.", valid ? "ok" : "err");
   saveCurrentLevelState();
 }
 
@@ -560,10 +560,10 @@ async function runTest() {
   state.animating = true;
   packetLayer.innerHTML = "";
   setCablesActive([]);
-  addLog("ðŸš€ Avvio prova: invio pacchetti nella rete...", "ok");
+  addLog("🚀 Avvio prova: invio pacchetti nella rete...", "ok");
 
   if (!pairs.length) {
-    addLog("ðŸ”Ž Non ci sono ancora due nodi adatti da testare.", "err");
+    addLog("⚠️ Non ci sono ancora due nodi adatti da testare.", "err");
   }
 
   for (const pair of pairs) {
@@ -580,9 +580,9 @@ async function runTest() {
       saveProgress();
       updateLevelTabs();
     }
-    showResult(true, "ðŸŽ‰ Rete funzionante", `Hai completato: ${level.title}. Il livello resta salvato.`, level.info);
+    showResult(true, "🎉 Rete funzionante", `Hai completato: ${level.title}. Il livello resta salvato.`, level.info);
   } else {
-    showResult(false, "ðŸ› ï¸ La rete non funziona ancora", result.msg, `ðŸ’¡ Indizio: ${result.hint || level.hint}`);
+    showResult(false, "💥 La rete non funziona ancora", result.msg, `💡 Indizio: ${result.hint || level.hint}`);
     showHint(result.hint || level.hint, "warn");
   }
   updateStats();
@@ -592,23 +592,23 @@ async function simulatePair(pair) {
   const source = getDevice(pair.src);
   const target = getDevice(pair.dst);
   if (!source || !target) return;
-  addLog(`ðŸ“¦ Test: ${source.label} -> ${target.label}`, "ok");
+  addLog(`🧪 Test: ${source.label} -> ${target.label}`, "ok");
 
   const path = findPath(pair.src, pair.dst);
   if (!path) {
     await pulseFailure(source, "Nessun percorso");
-    addLog(`âŒ Nessun percorso tra ${source.label} e ${target.label}.`, "err");
+    addLog(`✗ Nessun percorso tra ${source.label} e ${target.label}.`, "err");
     return;
   }
 
   if (pair.blocked) {
     await animatePath(path, true, pair.blockAt || "firewall");
-    addLog("ðŸ›¡ï¸ Il firewall ha bloccato il traffico in ingresso: comportamento corretto.", "ok");
+    addLog("🛑 Il firewall ha bloccato il traffico in ingresso: comportamento corretto.", "ok");
     return;
   }
 
   await animatePath(path, false);
-  addLog(`âœ… Pacchetto consegnato a ${target.label}. ACK ricevuto.`, "ok");
+  addLog(`✓ Pacchetto consegnato a ${target.label}. ACK ricevuto.`, "ok");
 }
 
 async function animatePath(path, shouldBlock, blockType) {
@@ -618,7 +618,7 @@ async function animatePath(path, shouldBlock, blockType) {
     if (!from || !to) continue;
     const cable = state.cables.find((item) => sameCable(item, from.id, to.id));
     setCablesActive(cable ? [cable.id] : []);
-    addLog(`âœ¨ ${from.label} -> ${to.label}: ${operationFor(to.type)}`, "ok");
+    addLog(`✨ ${from.label} -> ${to.label}: ${operationFor(to.type)}`, "ok");
     await animatePacket(from, to, shouldBlock && to.type === blockType);
     if (shouldBlock && to.type === blockType) {
       await pulseFailure(to, "Bloccato");
@@ -958,7 +958,7 @@ function hideContextMenu() {
 }
 
 function showResult(success, title, body, info) {
-  document.querySelector("#resultIcon").textContent = success ? "âœ…" : "ðŸ’¡";
+  document.querySelector("#resultIcon").textContent = success ? "✓" : "💡";
   document.querySelector("#resultTitle").textContent = title;
   document.querySelector("#resultBody").textContent = body;
   document.querySelector("#resultInfo").textContent = info;
@@ -967,7 +967,7 @@ function showResult(success, title, body, info) {
 }
 
 function closeResult() {
-  const success = document.querySelector("#resultIcon").textContent === "âœ…";
+  const success = document.querySelector("#resultIcon").textContent === "✓";
   resultModal.close();
   if (success && state.level < levels.length - 1) loadLevel(state.level + 1);
 }
