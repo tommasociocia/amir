@@ -23,104 +23,7 @@ const deviceMeta = {
   internet: { name: "Internet", emoji: "🌍", layer: "Rete", ports: 4, cablePeers: ["router"] },
 };
 
-const levels = [
-  {
-    title: "LAN a stella estesa",
-    available: ["pc", "switch"],
-    objective: [
-      "Crea una LAN broadcast a stella, come nelle slide sulle reti locali.",
-      "",
-      "- 1 switch centrale",
-      "- 4 PC collegati allo switch",
-      "- esattamente 4 cavi: c = n - 1",
-      "- usa cavi dritti",
-      "",
-      "La prova invia pacchetti tra due host della stessa LAN.",
-    ].join("\n"),
-    checks: ["4 PC esatti", "Uno switch centrale", "Ogni PC collegato solo allo switch", "Esattamente 4 cavi dritti"],
-    hint: "Nella stella il centro e' lo switch. Se hai 5 nodi totali, i canali devono essere 4.",
-    info: "Nella topologia a stella il numero di canali e' uguale al numero di nodi meno uno. Al centro si trova un hub o, realisticamente, uno switch.",
-    validate: validateLanStar,
-    pairs: () => pcPairs(),
-  },
-  {
-    title: "Internetworking LAN",
-    available: ["pc", "switch", "router"],
-    objective: [
-      "Collega due LAN diverse usando il livello Network OSI.",
-      "",
-      "- 2 switch di accesso",
-      "- 6 PC, tre per ogni switch",
-      "- 1 router tra le due LAN",
-      "- cavi dritti",
-      "",
-      "La prova controlla che un PC della prima subnet raggiunga un PC dell'altra.",
-    ].join("\n"),
-    checks: ["6 PC totali", "2 switch di accesso", "Router collegato ai due switch", "3 PC per ogni LAN"],
-    hint: "Lo switch collega host nella stessa LAN; il router serve quando devi passare da una rete IP a un'altra.",
-    info: "Il router lavora al livello 3 OSI: separa domini broadcast diversi e inoltra pacchetti IP verso la rete corretta.",
-    validate: validateTwoSubnets,
-    pairs: () => routedPair(),
-  },
-  {
-    title: "Topologia ad anello",
-    available: ["pc"],
-    objective: [
-      "Ricostruisci una topologia storica ad anello.",
-      "",
-      "- esattamente 6 PC",
-      "- ogni PC ha due collegamenti",
-      "- l'anello deve essere chiuso",
-      "- usa cavi incrociati",
-      "",
-      "La prova fa girare un token lungo tutto l'anello.",
-    ].join("\n"),
-    checks: ["6 PC esatti", "Ogni PC ha grado 2", "Anello chiuso", "6 cavi incrociati"],
-    hint: "Se un PC ha una sola connessione, l'anello e' aperto. Se ne ha tre, hai creato una diramazione.",
-    info: "Nelle topologie ad anello il traffico segue un percorso circolare. E' utile per capire differenze tra bus, stella, anello e maglia.",
-    validate: validateRing,
-    pairs: () => ringPair(),
-  },
-  {
-    title: "Perimetro LAN-WAN",
-    available: ["pc", "switch", "firewall", "router", "internet"],
-    objective: [
-      "Proteggi una LAN prima di uscire verso Internet.",
-      "",
-      "- 2 PC collegati allo switch",
-      "- switch collegato al firewall",
-      "- firewall collegato al router",
-      "- router collegato a Internet",
-      "- nessun collegamento diretto LAN -> router",
-      "",
-      "La prova mostra il traffico in uscita e blocca quello in ingresso.",
-    ].join("\n"),
-    checks: ["2 PC e switch interni", "Firewall tra LAN e router", "Router verso Internet", "Nessun bypass del firewall"],
-    hint: "L'ordine corretto e': PC -> switch -> firewall -> router -> Internet.",
-    info: "Il firewall applica regole di sicurezza su IP, porte e protocolli. In una rete reale si mette sul perimetro tra LAN privata e uscita WAN.",
-    validate: validateFirewall,
-    pairs: () => firewallPairs(),
-  },
-  {
-    title: "Rete scolastica",
-    available: ["pc", "switch", "server", "firewall", "router", "internet"],
-    objective: [
-      "Costruisci una piccola rete scolastica gerarchica.",
-      "",
-      "- 3 switch di aula con almeno 2 PC ciascuno",
-      "- 1 switch core centrale",
-      "- 1 server collegato al core",
-      "- firewall, router e Internet per l'uscita",
-      "",
-      "La prova testa PC -> server e PC -> Internet.",
-    ].join("\n"),
-    checks: ["Almeno 6 PC", "3 switch aula + 1 core", "Server sul core", "Uscita: core -> firewall -> router -> Internet"],
-    hint: "Pensa a tre livelli: accesso nelle aule, core centrale, perimetro verso Internet.",
-    info: "Una rete gerarchica separa accesso, distribuzione/core e WAN: e' piu ordinata, scalabile e facile da mantenere.",
-    validate: validateSchool,
-    pairs: () => schoolPairs(),
-  },
-];
+const levels = [];
 
 const state = {
   level: 0,
@@ -1001,5 +904,30 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
+function configureLevels() {
+  const factories = window.NetBuilderLevelFactories || {};
+  const context = {
+    validateLanStar,
+    validateTwoSubnets,
+    validateRing,
+    validateFirewall,
+    validateSchool,
+    pcPairs,
+    routedPair,
+    ringPair,
+    firewallPairs,
+    schoolPairs,
+  };
+  const orderedKeys = ["level1", "level2", "level3", "level4", "level5"];
+  levels.length = 0;
+  orderedKeys.forEach((key) => {
+    const makeLevel = factories[key];
+    if (typeof makeLevel === "function") {
+      levels.push(makeLevel(context));
+    }
+  });
+}
+
+configureLevels();
 init();
 
