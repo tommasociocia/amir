@@ -3,77 +3,102 @@
    Aggiunge: quiz teorici, flash‑teoria, XP/badge, animazioni
    ============================================================ */
 
-/* ─── QUIZ DATABASE (dalle slide) ─────────────────────────── */
+/* ─── QUIZ DATABASE (dalle slide ISO/OSI, TCP/IP, storia Internet) ── */
 const QUIZ_DB = {
   beforeLevel3: {
-    title: "Checkpoint: Topologie di rete",
-    icon: "🔁",
+    title: "Checkpoint: Modello ISO/OSI",
+    icon: "📚",
     questions: [
       {
-        q: "In una rete ad anello, quante connessioni ha ogni nodo?",
-        options: ["1", "2", "3", "Dipende dalla rete"],
-        correct: 1,
-        expl: "Ogni nodo è collegato esattamente a 2 altri nodi per formare l'anello chiuso."
+        q: "Quanti livelli ha il modello ISO/OSI?",
+        options: ["4", "5", "7", "9"],
+        correct: 2,
+        expl: "Il modello OSI è composto da sette livelli, suddivisi in livelli inferiori (fisico, data link, rete, trasporto) e livelli superiori (sessione, presentazione, applicazione)."
       },
       {
-        q: "Cosa succede se si rompe un cavo in una topologia a stella?",
-        options: ["Tutta la rete si blocca", "Solo il nodo collegato perde connettività", "Si attiva un percorso alternativo", "Lo switch si riavvia"],
+        q: "Cosa si intende per 'closed system' nelle reti degli anni '70?",
+        options: [
+          "Un sistema con firewall attivo",
+          "Un sistema che comunica solo con prodotti dello stesso produttore",
+          "Una rete senza accesso a Internet",
+          "Un sistema con crittografia end-to-end"
+        ],
         correct: 1,
-        expl: "Nella stella solo il ramo guasto perde connessione; gli altri host continuano a comunicare tramite lo switch centrale."
+        expl: "Negli anni '70 i produttori di hardware realizzavano reti proprietarie: i 'closed system' potevano comunicare solo con dispositivi dello stesso produttore."
       },
       {
-        q: "Standard IEEE per la rete ad anello (Token Ring)?",
-        options: ["IEEE 802.3", "IEEE 802.5", "IEEE 802.11", "IEEE 802.15"],
-        correct: 1,
-        expl: "La rete ad anello è definita dallo standard IEEE 802.5."
+        q: "Il livello Data Link (livello 2 OSI) divide i dati in:",
+        options: ["Pacchetti", "Segmenti", "Frame (trame)", "Bit stream"],
+        correct: 2,
+        expl: "Il livello Data Link divide il flusso di bit in frame, individua inizio e fine di ogni trama e attribuisce a ogni campo un significato specifico."
       }
     ]
   },
   beforeLevel5: {
-    title: "Checkpoint: LAN e Internetworking",
+    title: "Checkpoint: Livelli OSI e TCP/IP",
     icon: "🌐",
     questions: [
       {
-        q: "A quale livello OSI opera il router?",
-        options: ["Livello 1 – Fisico", "Livello 2 – Datalink", "Livello 3 – Rete", "Livello 4 – Trasporto"],
-        correct: 2,
-        expl: "Il router lavora al livello 3 (Rete) OSI: analizza gli indirizzi IP e decide il percorso dei pacchetti."
-      },
-      {
-        q: "Cosa distingue uno switch da un hub?",
-        options: ["Lo switch trasmette a tutti i nodi", "Lo switch instrada verso il solo destinatario MAC", "Lo switch lavora al livello 3", "Lo switch usa solo cavi incrociati"],
+        q: "A quale livello OSI opera il router, e quale funzione svolge?",
+        options: [
+          "Livello 2 – gestisce indirizzi MAC",
+          "Livello 3 – instrada i pacchetti IP tra reti diverse",
+          "Livello 4 – garantisce l'affidabilità della trasmissione",
+          "Livello 1 – trasmette i bit sul cavo"
+        ],
         correct: 1,
-        expl: "Lo switch conosce gli indirizzi MAC e invia il frame solo alla porta corretta, riducendo collisioni."
+        expl: "Il router lavora al livello 3 (Rete) OSI: analizza gli indirizzi IP e determina il percorso (routing) per far arrivare i pacchetti dal mittente al destinatario."
       },
       {
-        q: "Quale tecnica usa Ethernet per gestire le collisioni?",
-        options: ["TDMA", "Token Ring", "CSMA/CD", "FDMA"],
+        q: "Il modello TCP/IP ha quanti livelli rispetto all'OSI?",
+        options: ["Stessi 7 livelli", "5 livelli", "4 livelli", "3 livelli"],
         correct: 2,
-        expl: "Ethernet usa CSMA/CD: ascolta il canale, trasmette, e se rileva una collisione aspetta un tempo casuale prima di riprovare."
+        expl: "Il modello TCP/IP semplifica l'OSI in 4 livelli: Application (≈ OSI 5-6-7), Transport (TCP/UDP), Network (IP) e Physical (≈ OSI 1-2)."
+      },
+      {
+        q: "Cosa fa il livello di Trasporto nel modello OSI?",
+        options: [
+          "Instrada i pacchetti nella rete",
+          "Converte i dati in segnali fisici",
+          "Riassembla i pacchetti in ordine e garantisce affidabilità",
+          "Gestisce la cifratura dei dati"
+        ],
+        correct: 2,
+        expl: "Il livello di trasporto è end-to-end: riassembla i pacchetti arrivati in ordine sparso, controlla l'affidabilità e definisce la qualità del servizio."
       }
     ]
   },
   beforeLevel7: {
-    title: "Checkpoint: Sicurezza e WAN",
+    title: "Checkpoint: Storia di Internet e Sicurezza",
     icon: "🔒",
     questions: [
       {
-        q: "Il firewall opera principalmente su quali dati per filtrare il traffico?",
-        options: ["Solo indirizzi MAC", "IP, porte e protocolli", "Solo protocollo HTTP", "Frequenza del segnale"],
+        q: "In che anno fu realizzato il primo collegamento ARPANET tra 4 università americane?",
+        options: ["1965", "1969", "1973", "1982"],
         correct: 1,
-        expl: "Il firewall analizza IP sorgente/destinazione, porte e protocolli per applicare regole di sicurezza."
+        expl: "Nel 1969 fu realizzato il primo collegamento ARPANET tra quattro università americane. Nel 1971 la rete collegava già 23 computer."
       },
       {
-        q: "Una WAN (Wide Area Network) copre:",
-        options: ["Una singola stanza", "Un edificio o campus", "Più città fino a livello nazionale/globale", "Solo reti wireless"],
+        q: "Chi ha inventato il World Wide Web e in che anno?",
+        options: [
+          "Vinton Cerf, 1973",
+          "Ray Tomlinson, 1971",
+          "Tim Berners-Lee, 1989",
+          "Robert Kahn, 1982"
+        ],
         correct: 2,
-        expl: "Le WAN si estendono su scala geografica ampia: città, nazioni e anche l'intero pianeta (GAN)."
+        expl: "Tim Berners-Lee, ricercatore al CERN, inventò HTML e il World Wide Web nel 1989. Il primo sito web fu pubblicato nel 1991."
       },
       {
-        q: "Nella commutazione di pacchetto (datagram), i pacchetti di uno stesso messaggio:",
-        options: ["Seguono sempre lo stesso percorso", "Possono seguire percorsi diversi e vengono riordinati dal destinatario", "Vengono inviati in parallelo sullo stesso cavo", "Non vengono numerati"],
+        q: "Il protocollo UDP rispetto al TCP è:",
+        options: [
+          "Orientato alla connessione e affidabile",
+          "Non orientato alla connessione, senza controllo del flusso",
+          "Usato solo per la posta elettronica",
+          "Più lento ma più sicuro"
+        ],
         correct: 1,
-        expl: "Nel datagram switching ogni pacchetto è instradato indipendentemente; il destinatario li riassembla nell'ordine corretto."
+        expl: "UDP è un protocollo non orientato alla connessione e non garantisce la consegna in ordine. È utile quando qualche perdita è accettabile, ad esempio nello streaming video."
       }
     ]
   }
@@ -565,16 +590,289 @@ function showTheoryFlash(levelNum, onDone) {
   });
 }
 
+/* ─── MINIGAME CHECKPOINTS ───────────────────────────────────── */
+// Definisce quale tipo di checkpoint usare per ogni livello bloccato.
+// "quiz"    → showQuizModal  (QUIZ_DB)
+// "match"   → showMatchGame  (abbinamento)
+// "timeline"→ showTimelineGame (ordina eventi)
+const CHECKPOINT_TYPE = {
+  beforeLevel3: "quiz",
+  beforeLevel5: "match",
+  beforeLevel7: "timeline",
+};
+
+/* ── Abbinamento OSI (livello 5) ────────────────────────────── */
+function showMatchGame(onComplete) {
+  const pairs = [
+    { term: "Livello Fisico (L1)",        def: "Trasmette bit grezzi su cavo o wireless" },
+    { term: "Livello Data Link (L2)",      def: "Frame, indirizzi MAC, rilevazione errori" },
+    { term: "Livello Rete (L3)",           def: "Instradamento IP, routing tra reti diverse" },
+    { term: "Livello Trasporto (L4)",      def: "Affidabilità end-to-end, TCP e UDP" },
+    { term: "Livello Sessione (L5)",       def: "Gestione sessioni e sincronizzazione" },
+    { term: "Livello Presentazione (L6)",  def: "Cifratura, compressione e sintassi dati" },
+    { term: "Livello Applicazione (L7)",   def: "HTTP, FTP, SMTP — servizi utente" },
+  ];
+
+  // Shuffle definitions separately
+  const shuffledDefs = [...pairs.map((p, i) => ({ def: p.def, idx: i }))].sort(() => Math.random() - 0.5);
+
+  const overlay = document.createElement("div");
+  overlay.className = "quiz-overlay";
+
+  let selected = null;       // { side: "term"|"def", idx }
+  const matched = new Set(); // idx of correctly matched pairs
+  let errors = 0;
+
+  function render() {
+    overlay.innerHTML = `
+      <div class="match-modal">
+        <div class="quiz-header">
+          <span class="quiz-icon">🔗</span>
+          <div>
+            <p class="eyebrow">Checkpoint — Abbinamento</p>
+            <h2>Collega livello OSI alla funzione</h2>
+          </div>
+          <div class="quiz-progress">${matched.size}/7</div>
+        </div>
+        <p class="osi-game-intro">Clicca un livello a sinistra, poi la sua descrizione a destra.</p>
+        <div class="match-grid">
+          <div class="match-col" id="matchTerms">
+            ${pairs.map((p, i) => `
+              <div class="match-card ${matched.has(i) ? "matched" : ""}" data-side="term" data-idx="${i}">
+                ${p.term}
+              </div>`).join("")}
+          </div>
+          <div class="match-col" id="matchDefs">
+            ${shuffledDefs.map(d => `
+              <div class="match-card ${matched.has(d.idx) ? "matched" : ""}" data-side="def" data-idx="${d.idx}">
+                ${d.def}
+              </div>`).join("")}
+          </div>
+        </div>
+        <div class="match-footer">
+          <span class="match-errors">Errori: <strong>${errors}</strong></span>
+          <button class="btn secondary" id="matchSkip">Salta</button>
+        </div>
+      </div>`;
+
+    overlay.querySelectorAll(".match-card:not(.matched)").forEach(card => {
+      card.addEventListener("click", () => handleMatchClick(card));
+    });
+    overlay.querySelector("#matchSkip").addEventListener("click", () => {
+      overlay.remove();
+      onComplete(false);
+    });
+
+    // Re-highlight selected
+    if (selected) {
+      const sel = overlay.querySelector(`.match-card[data-side="${selected.side}"][data-idx="${selected.idx}"]`);
+      if (sel) sel.classList.add("selected");
+    }
+  }
+
+  function handleMatchClick(card) {
+    const side = card.dataset.side;
+    const idx  = parseInt(card.dataset.idx);
+    if (matched.has(idx)) return;
+
+    if (!selected) {
+      selected = { side, idx };
+      card.classList.add("selected");
+      return;
+    }
+
+    // Same side — change selection
+    if (selected.side === side) {
+      selected = { side, idx };
+      render();
+      return;
+    }
+
+    // Different sides — check match
+    const termIdx = side === "term" ? idx : selected.idx;
+    const defIdx  = side === "def"  ? idx : selected.idx;
+
+    if (termIdx === defIdx) {
+      // Correct!
+      matched.add(termIdx);
+      selected = null;
+      render();
+      if (matched.size === 7) {
+        setTimeout(() => {
+          overlay.remove();
+          const xp = Math.max(7, 21 - errors * 2);
+          addXP(xp, `Abbinamento OSI completato! (${errors} errori)`);
+          showToast(errors === 0 ? `🎯 Perfetto! Nessun errore! +${xp} XP` : `✅ Completato con ${errors} errori — +${xp} XP`, 3000);
+          onComplete(true);
+        }, 600);
+      }
+    } else {
+      // Wrong — flash red
+      errors++;
+      card.classList.add("wrong-flash");
+      const otherSide = selected.side;
+      const otherIdx  = selected.idx;
+      const otherCard = overlay.querySelector(`.match-card[data-side="${otherSide}"][data-idx="${otherIdx}"]`);
+      if (otherCard) otherCard.classList.add("wrong-flash");
+      setTimeout(() => {
+        card.classList.remove("wrong-flash");
+        if (otherCard) otherCard.classList.remove("wrong-flash");
+        selected = null;
+        render();
+      }, 700);
+    }
+  }
+
+  render();
+  document.body.appendChild(overlay);
+}
+
+/* ── Timeline Internet (livello 7) ─────────────────────────── */
+function showTimelineGame(onComplete) {
+  const events = [
+    { year: 1969, text: "Primo collegamento ARPANET tra 4 università" },
+    { year: 1971, text: "Ray Tomlinson inventa la e-mail" },
+    { year: 1973, text: "Kahn e Cerf ideano il protocollo TCP" },
+    { year: 1982, text: "Definizione del protocollo TCP/IP, nasce la parola 'internet'" },
+    { year: 1987, text: "Registrato il dominio cnr.it, primo .it italiano" },
+    { year: 1989, text: "Tim Berners-Lee inventa HTML e il World Wide Web" },
+    { year: 1991, text: "Pubblicato il primo sito web al mondo (CERN)" },
+    { year: 1993, text: "Rilasciato Mosaic, il primo browser grafico" },
+  ];
+
+  // Shuffle
+  const shuffled = [...events].sort(() => Math.random() - 0.5);
+  let order = shuffled.map((_, i) => i); // indices into shuffled array, representing current visual order
+  let dragIdx = null;
+  let dragOverIdx = null;
+
+  const overlay = document.createElement("div");
+  overlay.className = "quiz-overlay";
+
+  function render() {
+    overlay.innerHTML = `
+      <div class="timeline-modal">
+        <div class="quiz-header">
+          <span class="quiz-icon">📅</span>
+          <div>
+            <p class="eyebrow">Checkpoint — Timeline</p>
+            <h2>Ordina la storia di Internet</h2>
+          </div>
+        </div>
+        <p class="osi-game-intro">Trascina gli eventi dal più antico (in cima) al più recente (in fondo).</p>
+        <div class="timeline-list" id="timelineList">
+          ${order.map((si, pos) => `
+            <div class="tl-item" draggable="true" data-pos="${pos}" data-si="${si}">
+              <span class="tl-handle">⠿</span>
+              <span class="tl-text">${shuffled[si].text}</span>
+            </div>`).join("")}
+        </div>
+        <div class="match-footer">
+          <span></span>
+          <div style="display:flex;gap:8px">
+            <button class="btn secondary" id="tlSkip">Salta</button>
+            <button class="btn primary" id="tlCheck">Verifica ✓</button>
+          </div>
+        </div>
+      </div>`;
+
+    // Drag listeners
+    overlay.querySelectorAll(".tl-item").forEach(item => {
+      item.addEventListener("dragstart", e => {
+        dragIdx = parseInt(item.dataset.pos);
+        item.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+      });
+      item.addEventListener("dragend", () => {
+        item.classList.remove("dragging");
+        overlay.querySelectorAll(".tl-item").forEach(i => i.classList.remove("drag-over-tl"));
+        dragIdx = null; dragOverIdx = null;
+      });
+      item.addEventListener("dragover", e => {
+        e.preventDefault();
+        const over = parseInt(item.dataset.pos);
+        if (over !== dragIdx) {
+          overlay.querySelectorAll(".tl-item").forEach(i => i.classList.remove("drag-over-tl"));
+          item.classList.add("drag-over-tl");
+          dragOverIdx = over;
+        }
+      });
+      item.addEventListener("drop", e => {
+        e.preventDefault();
+        if (dragIdx === null || dragOverIdx === null || dragIdx === dragOverIdx) return;
+        // Reorder
+        const newOrder = [...order];
+        const [moved] = newOrder.splice(dragIdx, 1);
+        newOrder.splice(dragOverIdx, 0, moved);
+        order = newOrder;
+        render();
+      });
+    });
+
+    overlay.querySelector("#tlCheck").addEventListener("click", () => {
+      // Check correctness: order[pos] should correspond to events sorted by year
+      const sortedByYear = [...shuffled].map((e, i) => ({ ...e, si: i })).sort((a, b) => a.year - b.year);
+      let correct = 0;
+      const items = overlay.querySelectorAll(".tl-item");
+      order.forEach((si, pos) => {
+        const expectedSi = sortedByYear[pos].si;
+        const item = items[pos];
+        if (si === expectedSi) {
+          correct++;
+          item.classList.add("tl-correct");
+          item.querySelector(".tl-text").textContent = `${shuffled[si].year} — ${shuffled[si].text}`;
+        } else {
+          item.classList.add("tl-wrong");
+          item.querySelector(".tl-text").textContent = `${shuffled[si].year} — ${shuffled[si].text}`;
+        }
+      });
+
+      overlay.querySelector("#tlCheck").disabled = true;
+      overlay.querySelector("#tlSkip").textContent = "Continua →";
+
+      const xp = correct * 5;
+      addXP(xp, `Timeline Internet: ${correct}/8 corretti`);
+
+      setTimeout(() => {
+        overlay.querySelector("#tlSkip").addEventListener("click", () => {
+          overlay.remove();
+          showToast(correct === 8 ? `🏆 Perfetto! Tutti gli eventi in ordine! +${xp} XP` : `${correct}/8 corretti — +${xp} XP`, 3000);
+          onComplete(true);
+        }, { once: true });
+      }, 100);
+    });
+
+    overlay.querySelector("#tlSkip").addEventListener("click", () => {
+      overlay.remove();
+      onComplete(false);
+    });
+  }
+
+  render();
+  document.body.appendChild(overlay);
+}
+
 /* ─── LEVEL LOADING ─────────────────────────────────────────── */
 function loadLevel(n, skipIntro = false) {
   if (!state.unlockedLevels.has(n)) {
     const quizKey = `beforeLevel${n}`;
-    if (QUIZ_DB[quizKey]) {
+    const cpType = CHECKPOINT_TYPE[quizKey];
+
+    if (cpType === "quiz" && QUIZ_DB[quizKey]) {
       showQuizModal(quizKey, passed => {
-        if (passed) {
-          state.unlockedLevels.add(n);
-          loadLevel(n, false);
-        }
+        if (passed) { state.unlockedLevels.add(n); loadLevel(n, false); }
+      });
+      return;
+    }
+    if (cpType === "match") {
+      showMatchGame(passed => {
+        if (passed) { state.unlockedLevels.add(n); loadLevel(n, false); }
+      });
+      return;
+    }
+    if (cpType === "timeline") {
+      showTimelineGame(passed => {
+        if (passed) { state.unlockedLevels.add(n); loadLevel(n, false); }
       });
       return;
     }
@@ -1528,6 +1826,308 @@ const extraCSS = `
 .badge-popup strong { display: block; font-size: 14px; }
 .badge-popup small  { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
 
+/* ─── Abbinamento (match game) ─── */
+.match-modal {
+  width: min(700px, calc(100vw - 28px));
+  background: var(--surface-strong);
+  border: 1px solid var(--line); border-radius: 14px;
+  padding: 28px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 16px;
+  animation: slideUp .28s ease;
+  max-height: 90vh; overflow-y: auto;
+}
+.match-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.match-col { display: flex; flex-direction: column; gap: 6px; }
+.match-card {
+  padding: 10px 14px;
+  border: 2px solid var(--line); border-radius: 10px;
+  background: var(--surface); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: border-color .14s, background .14s, transform .12s;
+  line-height: 1.4;
+}
+.match-card:hover:not(.matched):not(.wrong-flash) {
+  border-color: var(--accent); background: #eef8f4;
+  transform: translateY(-1px);
+}
+.match-card.selected {
+  border-color: var(--accent-2); background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+}
+.match-card.matched {
+  border-color: var(--success); background: #eef8ee;
+  color: #14532d; cursor: default;
+  animation: matchPop .3s ease;
+}
+@keyframes matchPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+.match-card.wrong-flash {
+  border-color: var(--danger); background: #fff1f1;
+  animation: wrongShake .35s ease;
+}
+@keyframes wrongShake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.match-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 6px; border-top: 1px solid var(--line);
+}
+.match-errors { font-size: 13px; color: var(--muted); font-weight: 600; }
+.match-errors strong { color: var(--danger); }
+
+/* ─── Timeline game ─── */
+.timeline-modal {
+  width: min(580px, calc(100vw - 28px));
+  background: var(--surface-strong);
+  border: 1px solid var(--line); border-radius: 14px;
+  padding: 28px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 16px;
+  animation: slideUp .28s ease;
+  max-height: 90vh; overflow-y: auto;
+}
+.timeline-list {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.tl-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border: 2px solid var(--line); border-radius: 10px;
+  background: var(--surface); font-size: 13px; font-weight: 600;
+  cursor: grab; transition: border-color .14s, background .14s, transform .12s;
+  line-height: 1.4;
+}
+.tl-item:hover { border-color: var(--accent); background: #eef8f4; }
+.tl-item.dragging { opacity: .4; transform: scale(.97); }
+.tl-item.drag-over-tl {
+  border-color: var(--accent-2); background: #eff6ff;
+  transform: translateY(2px);
+}
+.tl-handle {
+  font-size: 16px; color: var(--muted); flex-shrink: 0; cursor: grab;
+  letter-spacing: -1px;
+}
+.tl-text { flex: 1; }
+.tl-item.tl-correct {
+  border-color: var(--success); background: #eef8ee; color: #14532d; cursor: default;
+}
+.tl-item.tl-wrong {
+  border-color: var(--danger); background: #fff1f1; color: #7f1d1d; cursor: default;
+}
+#splashScreen {
+  position: fixed; inset: 0; z-index: 3000;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--paper);
+  opacity: 0; transition: opacity .4s ease;
+  overflow: hidden;
+}
+#splashScreen.show { opacity: 1; }
+#splashScreen.hide { opacity: 0; pointer-events: none; }
+.splash-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 60% 40%, rgba(15,118,110,.08) 0%, transparent 70%),
+              radial-gradient(ellipse 50% 50% at 20% 80%, rgba(37,99,235,.06) 0%, transparent 60%);
+}
+.splash-content {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 18px; max-width: 480px; padding: 32px;
+  animation: slideUp .5s .1s both ease;
+}
+.splash-logo {
+  position: relative; width: 80px; height: 80px;
+  display: flex; align-items: center; justify-content: center;
+}
+.splash-mark {
+  width: 72px; height: 72px;
+  display: grid; place-items: center;
+  border: 2.5px solid var(--accent); border-radius: 16px;
+  color: var(--accent); background: #ecf8f5;
+  font-weight: 900; font-size: 26px; letter-spacing: -.02em;
+  position: relative; z-index: 1;
+}
+.splash-pulse {
+  position: absolute; inset: -8px; border-radius: 22px;
+  border: 2px solid var(--accent); opacity: .3;
+  animation: splashPulse 2.4s ease-in-out infinite;
+}
+@keyframes splashPulse {
+  0%,100% { transform: scale(1); opacity: .3; }
+  50% { transform: scale(1.1); opacity: .1; }
+}
+.splash-title {
+  margin: 0; font-size: 42px; letter-spacing: -.04em;
+  color: var(--ink); font-weight: 900; line-height: 1;
+}
+.splash-sub {
+  margin: 0; color: var(--muted); font-size: 15px; font-weight: 500;
+}
+.splash-features {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;
+}
+.splash-feat {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface-strong);
+  font-size: 13px; font-weight: 600; color: var(--ink);
+}
+.splash-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 28px; margin-top: 6px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 10px; cursor: pointer;
+  font-size: 16px; font-weight: 800;
+  transition: transform .16s, box-shadow .16s;
+  box-shadow: 0 12px 32px rgba(15,118,110,.28);
+}
+.splash-btn:hover { transform: translateY(-2px); box-shadow: 0 18px 40px rgba(15,118,110,.36); }
+.splash-note { margin: 0; color: var(--muted); font-size: 12px; }
+.splash-nodes { position: absolute; inset: 0; pointer-events: none; }
+.splash-node {
+  position: absolute;
+  animation: splashFloat linear infinite;
+}
+@keyframes splashFloat {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-18px) rotate(8deg); }
+}
+
+/* ─── Final completion screen ─── */
+#finalScreen {
+  position: fixed; inset: 0; z-index: 3000;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--paper);
+  opacity: 0; transition: opacity .4s ease;
+  overflow: hidden;
+}
+#finalScreen.show { opacity: 1; }
+#finalScreen.hide { opacity: 0; pointer-events: none; }
+.final-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 50% at 50% 30%, rgba(22,128,60,.09) 0%, transparent 70%),
+              radial-gradient(ellipse 60% 40% at 20% 80%, rgba(15,118,110,.07) 0%, transparent 60%);
+}
+.final-content {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 20px; max-width: 580px; padding: 32px;
+  animation: slideUp .5s .1s both ease;
+}
+.final-trophy {
+  font-size: 72px; line-height: 1;
+  animation: trophyBounce .6s .2s both cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes trophyBounce {
+  from { transform: scale(0) rotate(-20deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.final-title {
+  margin: 0; font-size: 36px; letter-spacing: -.03em; font-weight: 900;
+}
+.final-sub { margin: 0; color: var(--muted); font-size: 14px; max-width: 380px; line-height: 1.5; }
+.final-stats {
+  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+}
+.final-stat {
+  min-width: 110px; padding: 14px 16px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface-strong);
+}
+.final-stat strong { display: block; font-size: 32px; font-weight: 900; color: var(--accent); }
+.final-stat span { display: block; font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+.final-recap {
+  width: 100%; padding: 16px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--surface-strong);
+  text-align: left;
+}
+.final-topics {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px;
+}
+.final-topic {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #eef8f4; color: #14532d;
+  font-size: 12px; font-weight: 700;
+}
+.final-badges-row {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+}
+.final-badge {
+  padding: 6px 12px; border-radius: 999px;
+  background: #fff8e7; border: 1px solid #e7c975;
+  color: #7a4d00; font-size: 12px; font-weight: 800;
+}
+.final-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.final-btn-replay, .final-btn-osi { min-height: 44px; padding: 0 20px; font-size: 14px; }
+
+/* ─── OSI Minigioco ─── */
+.osi-game-modal {
+  width: min(640px, calc(100vw - 28px));
+  background: var(--surface-strong);
+  border: 1px solid var(--line); border-radius: 14px;
+  padding: 28px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 16px;
+  animation: slideUp .28s ease;
+  max-height: 90vh; overflow-y: auto;
+}
+.osi-game-header { display: flex; align-items: center; gap: 14px; }
+.osi-game-header h2 { margin: 4px 0 0; font-size: 18px; }
+.osi-game-intro { margin: 0; color: var(--muted); font-size: 13px; }
+.osi-slots {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.osi-slot {
+  display: grid; grid-template-columns: 32px 1fr; align-items: center; gap: 8px;
+}
+.osi-slot-num {
+  width: 28px; height: 28px; display: grid; place-items: center;
+  background: #eef8f4; border-radius: 50%;
+  font-size: 13px; font-weight: 900; color: var(--accent);
+  flex-shrink: 0;
+}
+.osi-slot-drop {
+  min-height: 38px; padding: 8px 14px;
+  border: 2px dashed var(--line-strong); border-radius: 8px;
+  color: var(--muted); font-size: 13px; font-weight: 600;
+  display: flex; align-items: center;
+  transition: border-color .14s, background .14s;
+  cursor: default;
+}
+.osi-slot-drop.drag-over {
+  border-color: var(--accent); background: #eef8f4;
+}
+.osi-slot-drop.slot-correct {
+  border-color: var(--success); background: #eef8ee; color: var(--success);
+  border-style: solid;
+}
+.osi-slot-drop.slot-wrong {
+  border-color: var(--danger); background: #fff1f1; color: var(--danger);
+  border-style: solid;
+}
+.osi-items {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: #faf6ed; min-height: 48px;
+}
+.osi-item {
+  padding: 7px 12px; border-radius: 8px;
+  border: 2px solid var(--lc, var(--accent));
+  background: #fff; cursor: grab;
+  display: flex; flex-direction: column;
+  transition: transform .12s, box-shadow .12s;
+}
+.osi-item:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.1); }
+.osi-item.dragging { opacity: .4; transform: scale(.96); }
+.osi-item-name { font-size: 13px; font-weight: 800; color: var(--lc, var(--accent)); }
+.osi-item-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.osi-game-footer { display: flex; justify-content: flex-end; gap: 10px; }
+
 /* ─── Locked tab ─── */
 .level-tab.is-locked { opacity: .45; }
 .level-tab.is-locked::before { content: "🔒"; font-size: 10px; margin-right: 3px; }
@@ -1541,6 +2141,262 @@ const styleEl = document.createElement("style");
 styleEl.textContent = extraCSS;
 document.head.appendChild(styleEl);
 
+/* ─── SPLASH SCREEN ──────────────────────────────────────────── */
+function showSplashScreen(onStart) {
+  const splash = document.createElement("div");
+  splash.id = "splashScreen";
+  splash.innerHTML = `
+    <div class="splash-bg"></div>
+    <div class="splash-content">
+      <div class="splash-logo">
+        <span class="splash-mark">NB</span>
+        <div class="splash-pulse"></div>
+      </div>
+      <h1 class="splash-title">NetBuilder</h1>
+      <p class="splash-sub">Laboratorio TPSIT — Costruisci reti reali</p>
+      <div class="splash-features">
+        <div class="splash-feat"><span>🏗️</span><span>8 scenari progressivi</span></div>
+        <div class="splash-feat"><span>📚</span><span>Teoria ISO/OSI & TCP/IP</span></div>
+        <div class="splash-feat"><span>🎯</span><span>Quiz e minigiochi</span></div>
+        <div class="splash-feat"><span>📦</span><span>Simulazione pacchetti</span></div>
+      </div>
+      <button class="splash-btn" id="splashStart">
+        <span>Inizia il laboratorio</span>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <p class="splash-note">Progresso salvato automaticamente nel browser</p>
+    </div>
+    <div class="splash-nodes" id="splashNodes"></div>
+  `;
+  document.body.appendChild(splash);
+
+  // Animated background nodes
+  const nodesContainer = splash.querySelector("#splashNodes");
+  const nodeTypes = ["💻","🔀","🌐","🛡️","🖥️"];
+  for (let i = 0; i < 12; i++) {
+    const nd = document.createElement("div");
+    nd.className = "splash-node";
+    nd.textContent = nodeTypes[i % nodeTypes.length];
+    nd.style.cssText = `
+      left:${Math.random()*90+5}%;
+      top:${Math.random()*90+5}%;
+      animation-delay:${Math.random()*4}s;
+      animation-duration:${6+Math.random()*4}s;
+      font-size:${18+Math.random()*16}px;
+      opacity:${0.08+Math.random()*0.12};
+    `;
+    nodesContainer.appendChild(nd);
+  }
+
+  requestAnimationFrame(() => splash.classList.add("show"));
+
+  splash.querySelector("#splashStart").addEventListener("click", () => {
+    splash.classList.add("hide");
+    setTimeout(() => { splash.remove(); onStart(); }, 500);
+  });
+}
+
+/* ─── OSI LAYER MINIGIOCO ────────────────────────────────────── */
+function showOsiMiniGame(onComplete) {
+  const layers = [
+    { n: 7, name: "Applicazione", desc: "Servizi utente (HTTP, FTP, SMTP)", color: "#ef4444" },
+    { n: 6, name: "Presentazione", desc: "Sintassi, cifratura, compressione", color: "#f97316" },
+    { n: 5, name: "Sessione", desc: "Gestione sessioni e sincronizzazione", color: "#eab308" },
+    { n: 4, name: "Trasporto", desc: "Affidabilità end-to-end (TCP/UDP)", color: "#22c55e" },
+    { n: 3, name: "Rete", desc: "Routing e indirizzamento IP", color: "#3b82f6" },
+    { n: 2, name: "Collegamento", desc: "Frame, MAC, controllo errori", color: "#8b5cf6" },
+    { n: 1, name: "Fisico", desc: "Segnali, cavi, bit raw", color: "#ec4899" },
+  ];
+
+  // Shuffle for the game
+  const shuffled = [...layers].sort(() => Math.random() - 0.5);
+
+  const overlay = document.createElement("div");
+  overlay.className = "quiz-overlay";
+  overlay.innerHTML = `
+    <div class="osi-game-modal">
+      <div class="osi-game-header">
+        <span class="quiz-icon">🧩</span>
+        <div>
+          <p class="eyebrow">Minigioco — Modello ISO/OSI</p>
+          <h2>Ordina i 7 livelli OSI</h2>
+        </div>
+        <div class="quiz-progress">dal 7 al 1</div>
+      </div>
+      <p class="osi-game-intro">Trascina i livelli per ordinarli dal più alto (Applicazione = 7) al più basso (Fisico = 1).</p>
+      <div class="osi-slots" id="osiSlots">
+        ${Array.from({length:7},(_,i)=>`
+          <div class="osi-slot" data-pos="${i}">
+            <span class="osi-slot-num">${7-i}</span>
+            <div class="osi-slot-drop" data-slot="${i}">Trascina qui…</div>
+          </div>`).join("")}
+      </div>
+      <div class="osi-items" id="osiItems">
+        ${shuffled.map(l=>`
+          <div class="osi-item" draggable="true" data-layer="${l.n}" style="--lc:${l.color}">
+            <span class="osi-item-name">${l.name}</span>
+            <span class="osi-item-desc">${l.desc}</span>
+          </div>`).join("")}
+      </div>
+      <div class="osi-game-footer">
+        <button class="btn secondary" id="osiSkip">Salta minigioco</button>
+        <button class="btn primary" id="osiCheck" disabled>Verifica ✓</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const slots = overlay.querySelectorAll(".osi-slot-drop");
+  const items = overlay.querySelectorAll(".osi-item");
+  const checkBtn = overlay.querySelector("#osiCheck");
+  const slotState = new Array(7).fill(null); // which layer number is in each slot
+
+  // Drag & drop
+  let dragItem = null;
+  items.forEach(item => {
+    item.addEventListener("dragstart", e => {
+      dragItem = item;
+      item.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    item.addEventListener("dragend", () => {
+      item.classList.remove("dragging");
+      dragItem = null;
+    });
+  });
+
+  slots.forEach((slot, i) => {
+    slot.addEventListener("dragover", e => { e.preventDefault(); slot.classList.add("drag-over"); });
+    slot.addEventListener("dragleave", () => slot.classList.remove("drag-over"));
+    slot.addEventListener("drop", e => {
+      e.preventDefault();
+      slot.classList.remove("drag-over");
+      if (!dragItem) return;
+
+      const layerN = parseInt(dragItem.dataset.layer);
+
+      // If slot already has something, return it to items pool
+      if (slotState[i] !== null) {
+        const existing = overlay.querySelector(`.osi-item[data-layer="${slotState[i]}"]`);
+        if (existing) {
+          existing.style.display = "";
+          overlay.querySelector("#osiItems").appendChild(existing);
+        }
+      }
+
+      // If this item was already placed elsewhere, clear that slot
+      slotState.forEach((v, j) => {
+        if (v === layerN) {
+          slotState[j] = null;
+          slots[j].innerHTML = "Trascina qui…";
+          slots[j].className = "osi-slot-drop";
+        }
+      });
+
+      slotState[i] = layerN;
+      slot.innerHTML = `<span style="color:var(--lc,#0f766e);font-weight:800">${dragItem.querySelector(".osi-item-name").textContent}</span>`;
+      slot.style.setProperty("--lc", dragItem.style.getPropertyValue("--lc"));
+      dragItem.style.display = "none";
+
+      checkBtn.disabled = slotState.some(v => v === null);
+    });
+  });
+
+  checkBtn.addEventListener("click", () => {
+    let correct = 0;
+    slotState.forEach((layerN, i) => {
+      const expectedN = 7 - i; // slot 0 = level 7, slot 6 = level 1
+      const slotEl = slots[i];
+      if (layerN === expectedN) {
+        correct++;
+        slotEl.classList.add("slot-correct");
+      } else {
+        slotEl.classList.add("slot-wrong");
+      }
+    });
+
+    const pct = Math.round((correct / 7) * 100);
+    addXP(correct * 5, `OSI Minigioco: ${correct}/7 livelli corretti`);
+
+    setTimeout(() => {
+      overlay.remove();
+      showToast(correct === 7 ? `🏆 Perfetto! Tutti i livelli OSI corretti! +${correct*5} XP` : `${correct}/7 corretti — continua a studiare! +${correct*5} XP`, 3500);
+      onComplete();
+    }, 1800);
+  });
+
+  overlay.querySelector("#osiSkip").addEventListener("click", () => {
+    overlay.remove();
+    onComplete();
+  });
+}
+
+/* ─── FINAL COMPLETION SCREEN ────────────────────────────────── */
+function showFinalCompletion() {
+  const totalXP = state.score;
+  const completedCount = state.completedLevels.size;
+  const badges = [...state.earnedBadges];
+
+  const screen = document.createElement("div");
+  screen.id = "finalScreen";
+  screen.innerHTML = `
+    <div class="final-bg"></div>
+    <div class="final-content">
+      <div class="final-trophy">🏆</div>
+      <h1 class="final-title">Laboratorio Completato!</h1>
+      <p class="final-sub">Hai costruito reti reali e padroneggiato la teoria delle telecomunicazioni</p>
+      <div class="final-stats">
+        <div class="final-stat">
+          <strong>${completedCount}</strong>
+          <span>Livelli completati</span>
+        </div>
+        <div class="final-stat">
+          <strong>${totalXP}</strong>
+          <span>XP totali</span>
+        </div>
+        <div class="final-stat">
+          <strong>${badges.length}</strong>
+          <span>Badge guadagnati</span>
+        </div>
+      </div>
+      <div class="final-recap">
+        <p class="eyebrow">Argomenti padroneggiati</p>
+        <div class="final-topics">
+          <div class="final-topic">🌟 Topologia a stella (LAN)</div>
+          <div class="final-topic">🔀 Internetworking e routing L3</div>
+          <div class="final-topic">🔁 Topologia ad anello</div>
+          <div class="final-topic">🛡️ Firewall e sicurezza perimetrale</div>
+          <div class="final-topic">🏫 Reti gerarchiche (scolastica/campus)</div>
+          <div class="final-topic">🖥️ Modello client-server</div>
+          <div class="final-topic">🌐 Architettura ISO/OSI e TCP/IP</div>
+        </div>
+      </div>
+      ${badges.length ? `<div class="final-badges-row">
+        ${BADGES.filter(b => badges.includes(b.id)).map(b => `<span title="${b.desc}" class="final-badge">${b.icon} ${b.label}</span>`).join("")}
+      </div>` : ""}
+      <div class="final-actions">
+        <button class="btn secondary final-btn-replay" id="finalReplay">🔄 Ricomincia da capo</button>
+        <button class="btn primary final-btn-osi" id="finalOsi">🧩 Minigioco OSI</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(screen);
+  requestAnimationFrame(() => screen.classList.add("show"));
+
+  screen.querySelector("#finalReplay").addEventListener("click", () => {
+    screen.classList.add("hide");
+    setTimeout(() => { screen.remove(); loadLevel(1, true); }, 500);
+  });
+
+  screen.querySelector("#finalOsi").addEventListener("click", () => {
+    screen.classList.add("hide");
+    setTimeout(() => {
+      screen.remove();
+      showOsiMiniGame(() => {});
+    }, 300);
+  });
+}
+
 /* ─── INIT ───────────────────────────────────────────────────── */
 // Sblocca i livelli già completati al caricamento
 state.completedLevels.forEach(n => {
@@ -1548,4 +2404,56 @@ state.completedLevels.forEach(n => {
   if (n + 1 <= 8) state.unlockedLevels.add(n + 1);
 });
 
-loadLevel(1, true);
+// Patch completeLevel to show final screen on level 8
+const _origCompleteLevel = completeLevel;
+// Override the "after level 8" button in completeLevel
+const _patchedCompleteLevel = function() {
+  const isLast = state.level === 8;
+  _origCompleteLevel();
+  if (isLast) {
+    // Override the result button to go to final screen
+    setTimeout(() => {
+      resultBtn.textContent = "🏆 Vedi i risultati finali";
+      resultBtn.onclick = () => {
+        resultModal.close();
+        showFinalCompletion();
+      };
+    }, 50);
+  }
+};
+
+// Replace completeLevel references via event patching
+testBtn.removeEventListener("click", runTest);
+testBtn.addEventListener("click", function() {
+  const lv = LEVELS[state.level];
+  if (!lv) return;
+  const errs = lv.validate();
+  updateChecklist(errs);
+
+  if (errs.length > 0) {
+    log("❌ Errori rilevati:", "err");
+    errs.forEach(e => log("  • " + e, "err"));
+    showToast("❌ La rete ha errori — controlla la console", 3000);
+    return;
+  }
+
+  log("✅ Struttura valida — simulazione pacchetti...", "ok");
+  const pairs = lv.pairs ? lv.pairs() : [];
+
+  if (!pairs.length) {
+    _patchedCompleteLevel();
+    return;
+  }
+
+  let pairIdx = 0;
+  function sendNext() {
+    if (pairIdx >= pairs.length) { _patchedCompleteLevel(); return; }
+    const [srcId, dstId] = pairs[pairIdx++];
+    simulatePacket(srcId, dstId, () => sendNext());
+  }
+  sendNext();
+});
+
+showSplashScreen(() => {
+  loadLevel(1, true);
+});
