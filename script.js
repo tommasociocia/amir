@@ -101,6 +101,123 @@ const QUIZ_DB = {
         expl: "UDP è un protocollo non orientato alla connessione e non garantisce la consegna in ordine. È utile quando qualche perdita è accettabile, ad esempio nello streaming video."
       }
     ]
+  },
+  beforeLevel8: {
+    title: "Checkpoint Boss 1: Campus Core",
+    icon: "🏢",
+    questions: [
+      {
+        q: "In una rete gerarchica campus, quale ruolo ha lo switch centrale?",
+        options: [
+          "Collega direttamente Internet ai PC",
+          "Aggrega gli switch di accesso e concentra il traffico interno",
+          "Sostituisce firewall e router",
+          "Serve solo per il Wi-Fi guest"
+        ],
+        correct: 1,
+        expl: "Lo switch centrale aggrega i livelli di accesso e instrada il traffico verso server interni e perimetro."
+      },
+      {
+        q: "Quale catena WAN e corretta in questo laboratorio?",
+        options: [
+          "Switch accesso -> Internet",
+          "PC -> Router -> Internet (senza firewall)",
+          "Switch centrale -> Firewall -> Router -> Internet",
+          "Server -> Firewall -> PC"
+        ],
+        correct: 2,
+        expl: "La catena obbligatoria e switch centrale -> firewall -> router -> Internet per separare LAN e WAN."
+      },
+      {
+        q: "Perche evitare bypass dagli switch di accesso verso router/firewall?",
+        options: [
+          "Per non consumare porte degli switch",
+          "Per mantenere controllo, segmentazione e policy di sicurezza",
+          "Perche i router non supportano VLAN",
+          "Solo per motivi estetici della topologia"
+        ],
+        correct: 1,
+        expl: "Il bypass rompe la gerarchia e riduce controllo e sicurezza del traffico."
+      }
+    ]
+  },
+  beforeLevel9: {
+    title: "Checkpoint Boss 2: Ridondanza e Segmentazione",
+    icon: "🧠",
+    questions: [
+      {
+        q: "A cosa serve avere due firewall in una topologia avanzata?",
+        options: [
+          "Solo ad aumentare il numero di dispositivi",
+          "A ridondanza, zone separate e continuita operativa",
+          "A sostituire tutti gli switch",
+          "A evitare il routing IP"
+        ],
+        correct: 1,
+        expl: "Due firewall permettono separazione di zone e maggiore resilienza."
+      },
+      {
+        q: "In un backbone ad alte prestazioni, il core deve essere:",
+        options: [
+          "Piatto e senza gerarchia",
+          "Con accesso diretto dei PC al router WAN",
+          "Separato dall'accesso e con uplink controllati",
+          "Limitato a un solo collegamento verso tutto"
+        ],
+        correct: 2,
+        expl: "Core separato e uplink controllati riducono colli di bottiglia e errori."
+      },
+      {
+        q: "Qual e il vantaggio principale di aumentare il numero di switch di accesso?",
+        options: [
+          "Migliore distribuzione del carico dei client",
+          "Eliminare il bisogno di server",
+          "Evitare qualsiasi configurazione IP",
+          "Ridurre la sicurezza"
+        ],
+        correct: 0,
+        expl: "Piu switch di accesso distribuiscono i client e migliorano scalabilita."
+      }
+    ]
+  },
+  beforeLevel10: {
+    title: "Checkpoint Final Boss: Architettura Enterprise",
+    icon: "👑",
+    questions: [
+      {
+        q: "Quale principio descrive meglio il final boss?",
+        options: [
+          "Tutti i nodi collegati a caso purche connessi",
+          "Separazione netta tra accesso, core, sicurezza e WAN",
+          "Solo collegamenti PC-PC",
+          "Un unico switch per tutta la rete"
+        ],
+        correct: 1,
+        expl: "La sfida finale richiede architettura enterprise con ruoli chiari tra livelli."
+      },
+      {
+        q: "Con due router WAN, quale obiettivo ottieni principalmente?",
+        options: [
+          "Nessuna differenza operativa",
+          "Maggiore affidabilita e percorsi alternativi",
+          "Ridurre i server necessari",
+          "Evitare l'uso dei firewall"
+        ],
+        correct: 1,
+        expl: "La doppia uscita WAN migliora continuita e tolleranza ai guasti."
+      },
+      {
+        q: "In una rete complessa, cosa va verificato prima del test finale?",
+        options: [
+          "Solo il numero totale dei cavi",
+          "Solo la presenza di Internet",
+          "Vincoli topologici, assenza bypass e raggiungibilita end-to-end",
+          "Solo la posizione grafica dei nodi"
+        ],
+        correct: 2,
+        expl: "Conta la correttezza funzionale: topologia, sicurezza e comunicazione tra endpoint."
+      }
+    ]
   }
 };
 
@@ -113,7 +230,9 @@ const THEORY_CARDS = {
   5: { icon: "🏫", title: "Rete Gerarchica", body: "Tre livelli: accesso (switch aula) → distribuzione (switch centrale) → perimetro (firewall + router). Il traffico converge verso il centro." },
   6: { icon: "🖥️", title: "Modello Client-Server", body: "I client accedono al server tramite lo switch. Il server è sempre raggiungibile senza passare per altri host. Cavi dritti PC↔Switch." },
   7: { icon: "🔐", title: "Doppia LAN + WAN", body: "Il router collega le due LAN interne. L'uscita WAN passa obbligatoriamente per firewall → router → Internet." },
-  8: { icon: "🏢", title: "Campus Enterprise", body: "Architettura a tre livelli su scala enterprise. Switch di accesso → switch centrale → firewall → router → Internet. Scalabile e sicura." }
+  8: { icon: "🏢", title: "Campus Enterprise", body: "Architettura a tre livelli su scala enterprise. Switch di accesso → switch centrale → firewall → router → Internet. Scalabile e sicura." },
+  9: { icon: "🧠", title: "Pre-Boss Tuning", body: "Ripeti la logica campus in modo pulito: accesso, core e perimetro devono restare separati senza bypass." },
+  10:{ icon: "👑", title: "Final Boss Campus", body: "Sfida finale completa con tutti i vincoli enterprise del livello 8: topologia gerarchica, server centrali e uscita WAN protetta." }
 };
 
 /* ─── BADGE SYSTEM ──────────────────────────────────────────── */
@@ -124,6 +243,7 @@ const BADGES = [
   { id: "half_way",     icon: "🏅", label: "Metà percorso",    desc: "4 livelli completati",              condition: s => s.completedLevels.size >= 4 },
   { id: "theorist",     icon: "📚", label: "Teorico",          desc: "Tutti i quiz superati",             condition: s => s.quizzesPassed >= 3 },
   { id: "campus_pro",   icon: "🏢", label: "Campus Pro",       desc: "Livello 8 completato",              condition: s => s.completedLevels.has(8) },
+  { id: "final_boss",   icon: "👑", label: "Final Boss",       desc: "Livello 10 completato",             condition: s => s.completedLevels.has(10) },
 ];
 
 /* ─── STATE ──────────────────────────────────────────────────── */
@@ -147,11 +267,13 @@ const state = {
   fastCompletes: 0,
   levelStartTime: null,
   earnedBadges: new Set(),
+  passedGateQuizzes: new Set(JSON.parse(localStorage.getItem("netbuilder-passed-gates") || "[]")),
   contextTarget: null,
 };
 
 /* ─── LEVEL DEFINITIONS ─────────────────────────────────────── */
 const LEVELS = {};
+const MAX_LEVEL = 10;
 
 /* ── Validation helpers ─────────────────────────────────────── */
 function getNeighbors(nodeId) {
@@ -201,6 +323,27 @@ function clientServerPairs() {
 }
 function secureWanPairs() { return pcPairs(); }
 function campusEnterprisePairs() { return schoolPairs(); }
+function preFinalCampusPairs() {
+  const pcs = nodesByType("pc");
+  const servers = nodesByType("server");
+  const pairs = [];
+  if (pcs.length >= 2) pairs.push([pcs[0].id, pcs[pcs.length - 1].id]);
+  if (pcs.length >= 4) pairs.push([pcs[1].id, pcs[3].id]);
+  if (pcs.length && servers.length) pairs.push([pcs[0].id, servers[0].id]);
+  if (pcs.length > 2 && servers.length > 1) pairs.push([pcs[2].id, servers[1].id]);
+  return pairs;
+}
+function finalBossPairs() {
+  const pcs = nodesByType("pc");
+  const servers = nodesByType("server");
+  const pairs = [];
+  if (pcs.length >= 2) pairs.push([pcs[0].id, pcs[pcs.length - 1].id]);
+  if (pcs.length >= 6) pairs.push([pcs[2].id, pcs[5].id]);
+  if (pcs.length && servers.length) pairs.push([pcs[0].id, servers[0].id]);
+  if (pcs.length > 4 && servers.length > 1) pairs.push([pcs[4].id, servers[1].id]);
+  if (pcs.length > 7 && servers.length > 2) pairs.push([pcs[7].id, servers[2].id]);
+  return pairs;
+}
 
 /* ── validateLanStar ──────────────────────────────────────────*/
 function validateLanStar() {
@@ -360,11 +503,52 @@ function validateCampusEnterprise() {
   return errs;
 }
 
+function validatePreFinalCampus() {
+  const pcs = nodesByType("pc");
+  const switches = nodesByType("switch");
+  const servers = nodesByType("server");
+  const firewalls = nodesByType("firewall");
+  const routers = nodesByType("router");
+  const internets = nodesByType("internet");
+  const errs = [];
+
+  if (pcs.length < 10) errs.push(`Hai ${pcs.length} PC, ne servono almeno 10`);
+  if (switches.length !== 6) errs.push(`Hai ${switches.length} switch, ne servono 6 (1 core + 5 accesso)`);
+  if (servers.length < 2) errs.push(`Hai ${servers.length} server, ne servono almeno 2`);
+  if (firewalls.length !== 1) errs.push("Serve 1 firewall");
+  if (routers.length !== 1) errs.push("Serve 1 router");
+  if (internets.length !== 1) errs.push("Serve il nodo Internet");
+  return errs;
+}
+
+function validateFinalBossCampus() {
+  const pcs = nodesByType("pc");
+  const switches = nodesByType("switch");
+  const servers = nodesByType("server");
+  const firewalls = nodesByType("firewall");
+  const routers = nodesByType("router");
+  const internets = nodesByType("internet");
+  const errs = [];
+
+  if (pcs.length < 12) errs.push(`Hai ${pcs.length} PC, ne servono almeno 12`);
+  if (switches.length !== 7) errs.push(`Hai ${switches.length} switch, ne servono 7 (1 core + 6 accesso)`);
+  if (servers.length < 3) errs.push(`Hai ${servers.length} server, ne servono almeno 3`);
+  if (firewalls.length !== 2) errs.push(`Hai ${firewalls.length} firewall, ne servono 2`);
+  if (routers.length !== 2) errs.push(`Hai ${routers.length} router, ne servono 2`);
+  if (internets.length !== 2) errs.push(`Hai ${internets.length} nodi Internet, ne servono 2`);
+  return errs;
+}
+
 /* ─── BUILD LEVELS ──────────────────────────────────────────── */
 const factories = window.NetBuilderLevelFactories || {};
-const helpers = { validateLanStar, validateTwoSubnets, validateRing, validateFirewall, validateSchool, validateClientServerLan, validateSecureWan, validateCampusEnterprise, pcPairs, routedPair, ringPair, firewallPairs, schoolPairs, clientServerPairs, secureWanPairs, campusEnterprisePairs };
+const helpers = {
+  validateLanStar, validateTwoSubnets, validateRing, validateFirewall, validateSchool,
+  validateClientServerLan, validateSecureWan, validateCampusEnterprise, validatePreFinalCampus,
+  validateFinalBossCampus, pcPairs, routedPair, ringPair, firewallPairs, schoolPairs,
+  clientServerPairs, secureWanPairs, campusEnterprisePairs, preFinalCampusPairs, finalBossPairs
+};
 
-[1,2,3,4,5,6,7,8].forEach(n => {
+[1,2,3,4,5,6,7,8,9,10].forEach(n => {
   const key = `level${n}`;
   if (factories[key]) LEVELS[n] = factories[key](helpers);
 });
@@ -599,6 +783,9 @@ const CHECKPOINT_TYPE = {
   beforeLevel3: "quiz",
   beforeLevel5: "match",
   beforeLevel7: "timeline",
+  beforeLevel8: "quiz",
+  beforeLevel9: "quiz",
+  beforeLevel10: "quiz",
 };
 
 /* ── Abbinamento OSI (livello 5) ────────────────────────────── */
@@ -854,8 +1041,21 @@ function showTimelineGame(onComplete) {
 
 /* ─── LEVEL LOADING ─────────────────────────────────────────── */
 function loadLevel(n, skipIntro = false) {
+  const gateQuizLevels = new Set([8, 9, 10]);
+  const quizKey = `beforeLevel${n}`;
+  if (gateQuizLevels.has(n) && !state.passedGateQuizzes.has(quizKey) && QUIZ_DB[quizKey]) {
+    showQuizModal(quizKey, passed => {
+      if (passed) {
+        state.passedGateQuizzes.add(quizKey);
+        state.unlockedLevels.add(n);
+        saveProgress();
+        loadLevel(n, false);
+      }
+    });
+    return;
+  }
+
   if (!state.unlockedLevels.has(n)) {
-    const quizKey = `beforeLevel${n}`;
     const cpType = CHECKPOINT_TYPE[quizKey];
 
     if (cpType === "quiz" && QUIZ_DB[quizKey]) {
@@ -891,6 +1091,7 @@ function saveProgress() {
   localStorage.setItem("netbuilder-score", String(state.score));
   localStorage.setItem("netbuilder-completed", JSON.stringify([...state.completedLevels]));
   localStorage.setItem("netbuilder-levels", JSON.stringify(state.savedLevels));
+  localStorage.setItem("netbuilder-passed-gates", JSON.stringify([...state.passedGateQuizzes]));
 }
 
 function saveCurrentLevelState() {
@@ -970,6 +1171,39 @@ const devicePalette = $("devicePalette");
 // Track drag-from-palette state
 let paletteDragType = null;
 let paletteDragGhost = null;
+let paletteDragMoved = false;
+let paletteDragStart = null;
+
+function getAutoPlacement() {
+  const vb = board.viewBox.baseVal;
+  const snapV = 40;
+  const marginX = 200;
+  const marginY = 160;
+  const cols = 8;
+  const idx = state.nodes.length;
+  const col = idx % cols;
+  const row = Math.floor(idx / cols);
+  const x = Math.round((marginX + col * snapV * 2) / snapV) * snapV;
+  const y = Math.round((marginY + row * snapV * 2) / snapV) * snapV;
+  return {
+    x: Math.max(snapV, Math.min(vb.width - snapV, x)),
+    y: Math.max(snapV, Math.min(vb.height - snapV, y)),
+  };
+}
+
+function placeDevice(type, x, y) {
+  const lv = LEVELS[state.level];
+  const available = lv ? lv.available : Object.keys(DEVICE_META);
+  if (!available.includes(type)) return;
+  const meta = DEVICE_META[type];
+  const id = nodeIdCounter++;
+  const typeCount = state.nodes.filter(n => n.type === type).length + 1;
+  state.nodes.push({ id, type, x, y, label: `${meta.label}${typeCount}` });
+  addXP(2, `Piazzato ${meta.label}`);
+  saveCurrentLevelState();
+  render();
+  liveUpdateChecklist();
+}
 
 function renderPalette() {
   devicePalette.innerHTML = "";
@@ -987,6 +1221,8 @@ function renderPalette() {
       card.addEventListener("mousedown", e => {
         if (e.button !== 0) return;
         paletteDragType = type;
+        paletteDragMoved = false;
+        paletteDragStart = { x: e.clientX, y: e.clientY };
 
         // Crea ghost visivo che segue il mouse
         paletteDragGhost = document.createElement("div");
@@ -1014,6 +1250,11 @@ document.addEventListener("mousemove", e => {
   if (!paletteDragGhost) return;
   paletteDragGhost.style.left = `${e.clientX}px`;
   paletteDragGhost.style.top  = `${e.clientY}px`;
+  if (paletteDragStart) {
+    const dx = e.clientX - paletteDragStart.x;
+    const dy = e.clientY - paletteDragStart.y;
+    if (Math.hypot(dx, dy) > 6) paletteDragMoved = true;
+  }
 });
 
 // Mouse up: se sopra la board, piazza il nodo
@@ -1021,7 +1262,16 @@ document.addEventListener("mouseup", e => {
   if (!paletteDragType) return;
   const type = paletteDragType;
   paletteDragType = null;
+  const wasClick = !paletteDragMoved;
+  paletteDragMoved = false;
+  paletteDragStart = null;
   if (paletteDragGhost) { paletteDragGhost.remove(); paletteDragGhost = null; }
+
+  if (wasClick) {
+    const p = getAutoPlacement();
+    placeDevice(type, p.x, p.y);
+    return;
+  }
 
   // Controlla se il mouse è sopra la board SVG
   const boardRect = board.getBoundingClientRect();
@@ -1029,10 +1279,6 @@ document.addEventListener("mouseup", e => {
     e.clientX >= boardRect.left && e.clientX <= boardRect.right &&
     e.clientY >= boardRect.top  && e.clientY <= boardRect.bottom
   ) {
-    const lv = LEVELS[state.level];
-    const available = lv ? lv.available : Object.keys(DEVICE_META);
-    if (!available.includes(type)) return;
-
     // Converti coordinate schermo → SVG viewBox
     const vb = board.viewBox.baseVal;
     const sx = vb.width  / boardRect.width;
@@ -1043,14 +1289,7 @@ document.addEventListener("mouseup", e => {
     const x = Math.round(rawX / snapV) * snapV;
     const y = Math.round(rawY / snapV) * snapV;
 
-    const meta = DEVICE_META[type];
-    const id = nodeIdCounter++;
-    const typeCount = state.nodes.filter(n => n.type === type).length + 1;
-    state.nodes.push({ id, type, x, y, label: `${meta.label}${typeCount}` });
-    addXP(2, `Piazzato ${meta.label}`);
-    saveCurrentLevelState();
-    render();
-    liveUpdateChecklist();
+    placeDevice(type, x, y);
   }
 });
 
@@ -1292,6 +1531,24 @@ const CHECK_CONDITIONS = {
     () => nodesByType("firewall").length === 1,
     () => nodesByType("router").length === 1,
     () => nodesByType("internet").length === 1,
+  ],
+  // Livello 9 – Pre-final Campus
+  9: [
+    () => nodesByType("pc").length >= 10,
+    () => nodesByType("switch").length === 6,
+    () => nodesByType("server").length >= 2,
+    () => nodesByType("firewall").length === 1,
+    () => nodesByType("router").length === 1,
+    () => nodesByType("internet").length === 1,
+  ],
+  // Livello 10 – Final Boss Campus
+  10: [
+    () => nodesByType("pc").length >= 12,
+    () => nodesByType("switch").length === 7,
+    () => nodesByType("server").length >= 3,
+    () => nodesByType("firewall").length === 2,
+    () => nodesByType("router").length === 2,
+    () => nodesByType("internet").length === 2,
   ],
 };
 
@@ -1597,7 +1854,7 @@ function completeLevel() {
   saveProgress();
 
   const nextLevel = state.level + 1;
-  if (nextLevel <= 8) state.unlockedLevels.add(nextLevel);
+  if (nextLevel <= MAX_LEVEL) state.unlockedLevels.add(nextLevel);
   updateTabs();
   checkBadges();
 
@@ -1607,7 +1864,7 @@ function completeLevel() {
   resultBody.textContent = `${lv?.title || ""} — Ottimo lavoro!`;
   resultInfo.innerHTML = `<strong>${lv?.info || ""}</strong><br><br>⏱ Tempo: ${Math.round(elapsed)}s &nbsp;|&nbsp; +${totalXP} XP${timeBonus ? " (bonus velocità!)" : ""}`;
 
-  if (nextLevel <= 8) {
+  if (nextLevel <= MAX_LEVEL) {
     resultBtn.textContent = `Livello ${nextLevel} →`;
     resultBtn.onclick = () => { resultModal.close(); loadLevel(nextLevel); };
   } else {
@@ -2401,14 +2658,14 @@ function showFinalCompletion() {
 // Sblocca i livelli già completati al caricamento
 state.completedLevels.forEach(n => {
   state.unlockedLevels.add(n);
-  if (n + 1 <= 8) state.unlockedLevels.add(n + 1);
+  if (n + 1 <= MAX_LEVEL) state.unlockedLevels.add(n + 1);
 });
 
-// Patch completeLevel to show final screen on level 8
+// Patch completeLevel to show final screen on last level
 const _origCompleteLevel = completeLevel;
-// Override the "after level 8" button in completeLevel
+// Override the "after last level" button in completeLevel
 const _patchedCompleteLevel = function() {
-  const isLast = state.level === 8;
+  const isLast = state.level === MAX_LEVEL;
   _origCompleteLevel();
   if (isLast) {
     // Override the result button to go to final screen

@@ -1,0 +1,30 @@
+window.NetBuilderLevelFactories = window.NetBuilderLevelFactories || {};
+window.NetBuilderLevelFactories.level9 = ({ validatePreFinalCampus, preFinalCampusPairs }) => ({
+  title: "Pre-final campus",
+  difficulty: 82,
+  available: ["pc", "switch", "server", "firewall", "router", "internet"],
+  objective: [
+    "Pre-final avanzato: espandi il campus e rendilo piu denso.",
+    "",
+    "Requisiti:",
+    "- 6 switch totali: 1 core + 5 di accesso",
+    "- almeno 10 PC (almeno 2 per ogni switch di accesso)",
+    "- 2 server collegati allo switch centrale",
+    "- uscita obbligatoria: switch centrale -> firewall -> router -> Internet",
+    "- nessuno switch di accesso deve collegarsi direttamente a firewall/router/Internet",
+    "",
+    "La prova testa traffico PC -> server e PC -> Internet.",
+  ].join("\n"),
+  checks: [
+    "Almeno 10 PC",
+    "6 switch: 1 switch centrale + 5 accesso",
+    "Ogni switch di accesso ha almeno 2 PC",
+    "2 server collegati allo switch centrale",
+    "Uscita completa: switch centrale -> firewall -> router -> Internet",
+    "Nessun bypass dagli switch di accesso",
+  ],
+  hint: "Distribuisci 2 PC su ciascuno dei 5 switch di accesso e chiudi la WAN solo dal core.",
+  info: "Livello 9: topologia campus estesa con maggiore densita di accesso.",
+  validate: validatePreFinalCampus,
+  pairs: () => preFinalCampusPairs(),
+});

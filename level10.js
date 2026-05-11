@@ -1,0 +1,30 @@
+window.NetBuilderLevelFactories = window.NetBuilderLevelFactories || {};
+window.NetBuilderLevelFactories.level10 = ({ validateFinalBossCampus, finalBossPairs }) => ({
+  title: "Final Boss: Campus Enterprise",
+  difficulty: 100,
+  available: ["pc", "switch", "server", "firewall", "router", "internet"],
+  objective: [
+    "Final Boss assoluto: rete enterprise ridondata e ad alta complessita.",
+    "",
+    "Requisiti:",
+    "- 7 switch totali: 1 core + 6 di accesso",
+    "- almeno 12 PC (almeno 2 per ogni switch di accesso)",
+    "- almeno 3 server sul core",
+    "- doppio perimetro WAN: 2 firewall + 2 router + 2 Internet",
+    "- nessun bypass dagli switch di accesso verso firewall/router/Internet",
+    "",
+    "La prova finale testa piu percorsi PC -> PC e PC -> server.",
+  ].join("\n"),
+  checks: [
+    "Almeno 12 PC",
+    "7 switch: 1 switch centrale + 6 accesso",
+    "Almeno 3 server collegati allo switch centrale",
+    "2 firewall + 2 router + 2 Internet",
+    "Perimetro WAN ridondato dal core",
+    "Nessun bypass dagli switch di accesso",
+  ],
+  hint: "Completa prima accesso+core, poi aggiungi doppio perimetro WAN e infine i server.",
+  info: "Final Boss completato: architettura enterprise multi-perimetro superata.",
+  validate: validateFinalBossCampus,
+  pairs: () => finalBossPairs(),
+});
