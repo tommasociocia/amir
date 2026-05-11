@@ -98,6 +98,26 @@ button {
   justify-content: center;
 }
 
+.objective-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.objective-emoji {
+  font-size: 20px;
+  line-height: 1;
+  opacity: 0.45;
+}
+
+.objective-emoji.is-done {
+  opacity: 1;
+}
+
 .level-tab {
   min-width: 46px;
   height: 46px;

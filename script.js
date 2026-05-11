@@ -5,6 +5,24 @@
 
 /* ─── QUIZ DATABASE (dalle slide ISO/OSI, TCP/IP, storia Internet) ── */
 const QUIZ_DB = {
+  beforeLevel2: {
+    title: "Checkpoint: Fondamenti di rete",
+    icon: "🧩",
+    questions: [
+      {
+        q: "Una LAN e tipicamente una rete:",
+        options: ["Geografica mondiale", "Locale, in area limitata", "Solo wireless", "Solo tra server"],
+        correct: 1,
+        expl: "La LAN copre un'area locale come aula, ufficio o edificio."
+      },
+      {
+        q: "Nella topologia a stella, il nodo centrale e di solito:",
+        options: ["Router WAN", "Firewall", "Switch", "Server DNS"],
+        correct: 2,
+        expl: "In una LAN moderna a stella il nodo centrale e lo switch."
+      }
+    ]
+  },
   beforeLevel3: {
     title: "Checkpoint: Modello ISO/OSI",
     icon: "📚",
@@ -65,6 +83,54 @@ const QUIZ_DB = {
         ],
         correct: 2,
         expl: "Il livello di trasporto è end-to-end: riassembla i pacchetti arrivati in ordine sparso, controlla l'affidabilità e definisce la qualità del servizio."
+      }
+    ]
+  },
+  beforeLevel4: {
+    title: "Checkpoint: Topologie e cablaggio",
+    icon: "🔌",
+    questions: [
+      {
+        q: "Nella topologia ad anello, ogni nodo deve avere:",
+        options: ["1 collegamento", "2 collegamenti", "3 collegamenti", "Solo uplink al core"],
+        correct: 1,
+        expl: "In anello ogni nodo ha due vicini: ingresso e uscita."
+      },
+      {
+        q: "Il token ring usa un token per:",
+        options: ["Cifrare i pacchetti", "Regolare l'accesso al mezzo", "Assegnare IP", "Misurare la banda"],
+        correct: 1,
+        expl: "Il token evita collisioni consentendo trasmissione ordinata."
+      },
+      {
+        q: "Cavo dritto e incrociato si scelgono in base a:",
+        options: ["Colore del dispositivo", "Tipo di apparati collegati", "Versione di Windows", "Dimensione rete"],
+        correct: 1,
+        expl: "La scelta dipende dal tipo di interfacce in collegamento."
+      }
+    ]
+  },
+  beforeLevel6: {
+    title: "Checkpoint: OSI e sicurezza",
+    icon: "🛡️",
+    questions: [
+      {
+        q: "Il firewall nel laboratorio viene posizionato:",
+        options: ["Tra LAN e WAN", "Tra PC e switch locale", "Al posto del router", "Dentro il server"],
+        correct: 0,
+        expl: "Il firewall protegge il perimetro tra rete interna e uscita esterna."
+      },
+      {
+        q: "Il router opera principalmente al livello:",
+        options: ["L1 Fisico", "L2 Data Link", "L3 Rete", "L7 Applicazione"],
+        correct: 2,
+        expl: "Il router instrada pacchetti IP tra reti diverse (L3)."
+      },
+      {
+        q: "Nel modello client-server, i client:",
+        options: ["Forniscono sempre servizi", "Consumano servizi dal server", "Sostituiscono firewall", "Non usano switch"],
+        correct: 1,
+        expl: "I client richiedono servizi ospitati dal server."
       }
     ]
   },
@@ -245,6 +311,14 @@ const BADGES = [
   { id: "campus_pro",   icon: "🏢", label: "Campus Pro",       desc: "Livello 8 completato",              condition: s => s.completedLevels.has(8) },
   { id: "final_boss",   icon: "👑", label: "Final Boss",       desc: "Livello 10 completato",             condition: s => s.completedLevels.has(10) },
 ];
+
+/* ─── RESET PROGRESS AD OGNI RELOAD ─────────────────────────── */
+[
+  "netbuilder-score",
+  "netbuilder-completed",
+  "netbuilder-levels",
+  "netbuilder-passed-gates",
+].forEach(k => localStorage.removeItem(k));
 
 /* ─── STATE ──────────────────────────────────────────────────── */
 const state = {
@@ -589,6 +663,9 @@ const levelTabs    = $("levelTabs");
 const statLevel    = $("statLevel");
 const statScore    = $("statScore");
 const statDevices  = $("statDevices");
+const objEarly     = $("objEarly");
+const objMid       = $("objMid");
+const objLate      = $("objLate");
 const levelTitle   = $("levelTitle");
 const objectiveText= $("objectiveText");
 const checklist    = $("checklist");
@@ -673,6 +750,7 @@ function showQuizModal(quizKey, onComplete) {
     const q = quiz.questions[current];
     overlay.innerHTML = `
       <div class="quiz-modal">
+        <button class="quiz-close" id="quizClose" aria-label="Chiudi quiz">✕</button>
         <div class="quiz-header">
           <span class="quiz-icon">${quiz.icon}</span>
           <div>
@@ -697,6 +775,10 @@ function showQuizModal(quizKey, onComplete) {
       </div>`;
 
     answered = false;
+    overlay.querySelector("#quizClose").addEventListener("click", () => {
+      overlay.remove();
+      onComplete(false);
+    });
 
     overlay.querySelectorAll(".quiz-opt").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -780,9 +862,12 @@ function showTheoryFlash(levelNum, onDone) {
 // "match"   → showMatchGame  (abbinamento)
 // "timeline"→ showTimelineGame (ordina eventi)
 const CHECKPOINT_TYPE = {
+  beforeLevel2: "quiz",
   beforeLevel3: "quiz",
-  beforeLevel5: "match",
-  beforeLevel7: "timeline",
+  beforeLevel4: "quiz",
+  beforeLevel5: "quiz",
+  beforeLevel6: "quiz",
+  beforeLevel7: "quiz",
   beforeLevel8: "quiz",
   beforeLevel9: "quiz",
   beforeLevel10: "quiz",
@@ -1041,7 +1126,7 @@ function showTimelineGame(onComplete) {
 
 /* ─── LEVEL LOADING ─────────────────────────────────────────── */
 function loadLevel(n, skipIntro = false) {
-  const gateQuizLevels = new Set([8, 9, 10]);
+  const gateQuizLevels = new Set([2, 3, 4, 5, 6, 7, 8, 9, 10]);
   const quizKey = `beforeLevel${n}`;
   if (gateQuizLevels.has(n) && !state.passedGateQuizzes.has(quizKey) && QUIZ_DB[quizKey]) {
     showQuizModal(quizKey, passed => {
@@ -1092,6 +1177,25 @@ function saveProgress() {
   localStorage.setItem("netbuilder-completed", JSON.stringify([...state.completedLevels]));
   localStorage.setItem("netbuilder-levels", JSON.stringify(state.savedLevels));
   localStorage.setItem("netbuilder-passed-gates", JSON.stringify([...state.passedGateQuizzes]));
+}
+
+function updateObjectives() {
+  const hasEarly = [1, 2, 3].every(n => state.completedLevels.has(n));
+  const hasMid = [4, 5, 6, 7].every(n => state.completedLevels.has(n));
+  const hasLate = [8, 9, 10].every(n => state.completedLevels.has(n));
+
+  if (objEarly) {
+    objEarly.textContent = hasEarly ? "✅" : "1️⃣";
+    objEarly.classList.toggle("is-done", hasEarly);
+  }
+  if (objMid) {
+    objMid.textContent = hasMid ? "✅" : "2️⃣";
+    objMid.classList.toggle("is-done", hasMid);
+  }
+  if (objLate) {
+    objLate.textContent = hasLate ? "🏆" : "3️⃣";
+    objLate.classList.toggle("is-done", hasLate);
+  }
 }
 
 function saveCurrentLevelState() {
@@ -1163,6 +1267,7 @@ function updateTabs() {
     });
     levelTabs.appendChild(btn);
   });
+  updateObjectives();
 }
 
 /* ─── PALETTE ────────────────────────────────────────────────── */
@@ -1856,6 +1961,7 @@ function completeLevel() {
   const nextLevel = state.level + 1;
   if (nextLevel <= MAX_LEVEL) state.unlockedLevels.add(nextLevel);
   updateTabs();
+  updateObjectives();
   checkBadges();
 
   const lv = LEVELS[state.level];
@@ -2017,6 +2123,20 @@ const extraCSS = `
   display: flex; flex-direction: column; gap: 18px;
   animation: slideUp .28s ease;
 }
+.quiz-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 800;
+  cursor: pointer;
+}
+.quiz-close:hover { border-color: var(--accent); color: var(--accent); }
 .quiz-header { display: flex; align-items: center; gap: 14px; }
 .quiz-icon { font-size: 34px; }
 .quiz-header h2 { margin: 4px 0 0; font-size: 18px; letter-spacing: -.01em; }
@@ -2412,7 +2532,7 @@ function showSplashScreen(onStart) {
       <h1 class="splash-title">NetBuilder</h1>
       <p class="splash-sub">Laboratorio TPSIT — Costruisci reti reali</p>
       <div class="splash-features">
-        <div class="splash-feat"><span>🏗️</span><span>8 scenari progressivi</span></div>
+        <div class="splash-feat"><span>🏗️</span><span>10 scenari progressivi</span></div>
         <div class="splash-feat"><span>📚</span><span>Teoria ISO/OSI & TCP/IP</span></div>
         <div class="splash-feat"><span>🎯</span><span>Quiz e minigiochi</span></div>
         <div class="splash-feat"><span>📦</span><span>Simulazione pacchetti</span></div>
