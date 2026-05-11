@@ -663,9 +663,8 @@ const levelTabs    = $("levelTabs");
 const statLevel    = $("statLevel");
 const statScore    = $("statScore");
 const statDevices  = $("statDevices");
-const objEarly     = $("objEarly");
-const objMid       = $("objMid");
-const objLate      = $("objLate");
+const objectiveBtn = $("objectiveBtn");
+const objectivePanel = $("objectivePanel");
 const levelTitle   = $("levelTitle");
 const objectiveText= $("objectiveText");
 const checklist    = $("checklist");
@@ -750,7 +749,7 @@ function showQuizModal(quizKey, onComplete) {
     const q = quiz.questions[current];
     overlay.innerHTML = `
       <div class="quiz-modal">
-        <button class="quiz-close" id="quizClose" aria-label="Chiudi quiz">✕</button>
+        <button class="quiz-close" id="quizClose" aria-label="Chiudi quiz">X</button>
         <div class="quiz-header">
           <span class="quiz-icon">${quiz.icon}</span>
           <div>
@@ -1130,11 +1129,14 @@ function loadLevel(n, skipIntro = false) {
   const quizKey = `beforeLevel${n}`;
   if (gateQuizLevels.has(n) && !state.passedGateQuizzes.has(quizKey) && QUIZ_DB[quizKey]) {
     showQuizModal(quizKey, passed => {
-      if (passed) {
+      const canBypassBecausePreviousDone = state.completedLevels.has(n - 1);
+      if (passed || canBypassBecausePreviousDone) {
         state.passedGateQuizzes.add(quizKey);
         state.unlockedLevels.add(n);
         saveProgress();
         loadLevel(n, false);
+      } else {
+        showToast("Quiz non superato", 1600);
       }
     });
     return;
@@ -1180,22 +1182,49 @@ function saveProgress() {
 }
 
 function updateObjectives() {
-  const hasEarly = [1, 2, 3].every(n => state.completedLevels.has(n));
-  const hasMid = [4, 5, 6, 7].every(n => state.completedLevels.has(n));
-  const hasLate = [8, 9, 10].every(n => state.completedLevels.has(n));
+  const doneIcon = "\u2705";
+  const todoIcon = "\u2B1C";
+  const trophyIcon = "\uD83C\uDFC6";
+  const brainIcon = "\uD83E\uDDE0";
+  const linkIcon = "\uD83D\uDD17";
+  const boltIcon = "\u26A1";
 
-  if (objEarly) {
-    objEarly.textContent = hasEarly ? "✅" : "1️⃣";
-    objEarly.classList.toggle("is-done", hasEarly);
-  }
-  if (objMid) {
-    objMid.textContent = hasMid ? "✅" : "2️⃣";
-    objMid.classList.toggle("is-done", hasMid);
-  }
-  if (objLate) {
-    objLate.textContent = hasLate ? "🏆" : "3️⃣";
-    objLate.classList.toggle("is-done", hasLate);
-  }
+  const objectives = [
+    { id: "o1", text: "1) Completa livelli 1-3", done: () => [1, 2, 3].every(n => state.completedLevels.has(n)) },
+    { id: "o2", text: "2) Completa livelli 4-7", done: () => [4, 5, 6, 7].every(n => state.completedLevels.has(n)) },
+    { id: "o3", text: "3) Completa livelli 8-10", done: () => [8, 9, 10].every(n => state.completedLevels.has(n)), doneIcon: trophyIcon },
+    { id: "o4", text: "4) Metti 10+ dispositivi in mappa", done: () => state.nodes.length >= 10, unlock: m => m.o1 },
+    { id: "o5", text: "5) Crea 12+ collegamenti", done: () => state.cables.length >= 12, unlock: m => m.o4, doneIcon: linkIcon },
+    { id: "o6", text: "6) Completa un livello veloce (<60s)", done: () => state.fastCompletes >= 1, unlock: m => m.o5, doneIcon: boltIcon },
+    { id: "o7", text: "7) Chiudi una mappa con 2 server", done: () => state.nodes.filter(n => n.type === "server").length >= 2, unlock: m => m.o6, doneIcon: brainIcon },
+  ];
+
+  const doneMap = {};
+  objectives.forEach(o => { doneMap[o.id] = !!o.done(); });
+  const visible = objectives.filter(o => !o.unlock || o.unlock(doneMap));
+  const doneVisible = visible.filter(o => doneMap[o.id]).length;
+
+  if (objectiveBtn) objectiveBtn.textContent = `Obiettivi ${doneVisible}/${visible.length}`;
+  if (!objectivePanel) return;
+  objectivePanel.innerHTML = visible.map(o => {
+    const done = doneMap[o.id];
+    const icon = done ? (o.doneIcon || doneIcon) : todoIcon;
+    return `<div class="objective-item${done ? " done" : ""}">${icon} ${o.text}</div>`;
+  }).join("");
+}
+
+if (objectiveBtn && objectivePanel) {
+  objectiveBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    objectivePanel.classList.toggle("show");
+    objectivePanel.setAttribute("aria-hidden", objectivePanel.classList.contains("show") ? "false" : "true");
+    updateObjectives();
+  });
+  objectivePanel.addEventListener("click", e => e.stopPropagation());
+  document.addEventListener("click", () => {
+    objectivePanel.classList.remove("show");
+    objectivePanel.setAttribute("aria-hidden", "true");
+  });
 }
 
 function saveCurrentLevelState() {
@@ -1281,18 +1310,39 @@ let paletteDragStart = null;
 
 function getAutoPlacement() {
   const vb = board.viewBox.baseVal;
+  return { x: vb.width / 2, y: vb.height / 2 };
+}
+
+function getSmartPlacement(type) {
+  const vb = board.viewBox.baseVal;
   const snapV = 40;
-  const marginX = 200;
-  const marginY = 160;
-  const cols = 8;
-  const idx = state.nodes.length;
-  const col = idx % cols;
-  const row = Math.floor(idx / cols);
-  const x = Math.round((marginX + col * snapV * 2) / snapV) * snapV;
-  const y = Math.round((marginY + row * snapV * 2) / snapV) * snapV;
+  const margin = 60;
+  const zones = {
+    pc:       { x0: 120, y0: 120, w: 380, h: 480 },
+    switch:   { x0: 500, y0: 120, w: 220, h: 460 },
+    server:   { x0: 500, y0: 600, w: 220, h: 80 },
+    firewall: { x0: 760, y0: 260, w: 120, h: 180 },
+    router:   { x0: 900, y0: 260, w: 120, h: 180 },
+    internet: { x0: 1020, y0: 280, w: 60, h: 160 },
+  };
+  const z = zones[type] || { x0: 180, y0: 140, w: 700, h: 420 };
+  const count = state.nodes.filter(n => n.type === type).length;
+  const cols = Math.max(1, Math.floor(z.w / 80));
+  let x = z.x0 + (count % cols) * 80;
+  let y = z.y0 + Math.floor(count / cols) * 80;
+
+  for (let i = 0; i < 28; i++) {
+    const occupied = state.nodes.some(n => Math.hypot(n.x - x, n.y - y) < 70);
+    if (!occupied) break;
+    x += 40;
+    if (x > z.x0 + z.w) { x = z.x0; y += 40; }
+  }
+
+  x = Math.round(x / snapV) * snapV;
+  y = Math.round(y / snapV) * snapV;
   return {
-    x: Math.max(snapV, Math.min(vb.width - snapV, x)),
-    y: Math.max(snapV, Math.min(vb.height - snapV, y)),
+    x: Math.max(margin, Math.min(vb.width - margin, x)),
+    y: Math.max(margin, Math.min(vb.height - margin, y)),
   };
 }
 
@@ -1308,6 +1358,7 @@ function placeDevice(type, x, y) {
   saveCurrentLevelState();
   render();
   liveUpdateChecklist();
+  updateObjectives();
 }
 
 function renderPalette() {
@@ -1373,7 +1424,7 @@ document.addEventListener("mouseup", e => {
   if (paletteDragGhost) { paletteDragGhost.remove(); paletteDragGhost = null; }
 
   if (wasClick) {
-    const p = getAutoPlacement();
+    const p = getSmartPlacement(type);
     placeDevice(type, p.x, p.y);
     return;
   }
@@ -1737,7 +1788,7 @@ function onNodeClick(id) {
 
 function addCable(a, b) {
   const existing = state.cables.findIndex(c => (c.a === a && c.b === b) || (c.a === b && c.b === a));
-  if (existing !== -1) { state.cables.splice(existing, 1); saveCurrentLevelState(); render(); liveUpdateChecklist(); return; }
+  if (existing !== -1) { state.cables.splice(existing, 1); saveCurrentLevelState(); render(); liveUpdateChecklist(); updateObjectives(); return; }
   // Controlla porte disponibili
   const nodeA = state.nodes.find(n => n.id === a);
   const nodeB = state.nodes.find(n => n.id === b);
@@ -1753,6 +1804,7 @@ function addCable(a, b) {
   addXP(1, "Cavo aggiunto");
   saveCurrentLevelState();
   liveUpdateChecklist();
+  updateObjectives();
 }
 
 function deleteNode(id) {
@@ -1762,6 +1814,7 @@ function deleteNode(id) {
   saveCurrentLevelState();
   render();
   liveUpdateChecklist();
+  updateObjectives();
 }
 
 /* ─── DRAG ───────────────────────────────────────────────────── */
@@ -1911,6 +1964,7 @@ resetBtn.addEventListener("click", () => {
   networkLog.innerHTML = "";
   renderChecklist();
   log("🔄 Rete azzerata");
+  updateObjectives();
 });
 
 /* ─── TEST ───────────────────────────────────────────────────── */
@@ -2119,6 +2173,7 @@ const extraCSS = `
   width: min(540px, calc(100vw - 28px));
   background: var(--surface-strong);
   border: 1px solid var(--line); border-radius: 14px;
+  position: relative;
   padding: 28px; box-shadow: var(--shadow);
   display: flex; flex-direction: column; gap: 18px;
   animation: slideUp .28s ease;
@@ -2133,6 +2188,7 @@ const extraCSS = `
   border: 1px solid var(--line-strong);
   background: var(--surface);
   color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
   font-weight: 800;
   cursor: pointer;
 }

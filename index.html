@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
@@ -20,10 +20,9 @@
     </div>
 
     <nav class="level-tabs" id="levelTabs" aria-label="Livelli"></nav>
-    <div class="objective-bar" id="objectiveBar" aria-label="Obiettivi">
-      <span class="objective-emoji" id="objEarly">⬜</span>
-      <span class="objective-emoji" id="objMid">⬜</span>
-      <span class="objective-emoji" id="objLate">⬜</span>
+    <div class="objective-wrap">
+            <button class="objective-btn" id="objectiveBtn" type="button">Obiettivi</button>
+      <div class="objective-panel" id="objectivePanel" aria-hidden="true"></div>
     </div>
 
     <div class="stats" aria-label="Statistiche">
@@ -56,7 +55,7 @@
 
       <section class="quick-help">
         <h2>Comandi ✨</h2>
-        <p>👆 Click su un dispositivo per inserirlo. 🔗 Click su due nodi per collegarli. 🖱️ Trascina un nodo per sistemarlo. 🗑️ Doppio click elimina.</p>
+        <p>👉 Click su un dispositivo per inserirlo. 🔗 Click su due nodi per collegarli. 🖱️ Trascina un nodo per sistemarlo. 🗑️ Doppio click elimina.</p>
       </section>
     </aside>
 
