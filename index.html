@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NetBuilder - Costruisci la rete</title>
+  <script>
+    (function(){
+      var s=localStorage.getItem('nb-theme');
+      if(!s) s=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+      if(s==='dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -57,6 +64,12 @@
         <h2>Comandi ✨</h2>
         <p>👉 Click su un dispositivo per inserirlo. 🔗 Click su due nodi per collegarli. 🖱️ Trascina un nodo per sistemarlo. 🗑️ Doppio click elimina.</p>
       </section>
+
+      <section style="display:flex;justify-content:center;padding:10px 0 4px">
+        <button class="theme-toggle" id="gameThemeToggle" type="button" title="Cambia tema chiaro/scuro" aria-label="Cambia tema">
+          <span class="t-icon" id="themeIcon">☀️</span>
+        </button>
+      </section>
     </aside>
 
     <section class="workspace">
@@ -64,6 +77,21 @@
         <div>
           <p class="eyebrow">Scenario</p>
           <h2 id="levelTitle"></h2>
+        </div>
+        <div class="run-hud" aria-label="Sfide livello">
+          <div class="time-chip">
+            <span>Tempo</span>
+            <strong id="runTimer">00:00</strong>
+            <div class="time-bar"><span id="timeBar"></span></div>
+          </div>
+          <div class="budget-chip">
+            <span>Cavi</span>
+            <strong id="cableBudget">0/0</strong>
+          </div>
+          <div class="event-chip" id="eventChip" hidden>
+            <span>Evento</span>
+            <strong id="eventText">-</strong>
+          </div>
         </div>
         <div class="actions">
           <button class="btn secondary" id="hintBtn" type="button">💡 Indizio</button>
@@ -88,6 +116,14 @@
           <g id="deviceLayer"></g>
         </svg>
       </div>
+
+      <section class="console-panel" id="consolePanel">
+        <div class="console-resizer" id="consoleResizer" aria-hidden="true"></div>
+        <div class="console-header">
+          <p class="eyebrow">Console rete</p>
+        </div>
+        <div class="network-log" id="networkLog"></div>
+      </section>
     </section>
 
     <aside class="mission-panel">
@@ -102,9 +138,10 @@
       </section>
 
       <section class="mission-card">
-        <p class="eyebrow">Console rete</p>
-        <div class="network-log" id="networkLog"></div>
+        <p class="eyebrow">Sfide bonus</p>
+        <div class="challenge-list" id="challengeList"></div>
       </section>
+
     </aside>
   </main>
 
@@ -134,5 +171,80 @@
   <script src="level9.js"></script>
   <script src="level10.js"></script>
   <script src="script.js"></script>
+<script>
+/* ── GAME DARK MODE ──────────────────────────────────────── */
+(function(){
+  const STORAGE_KEY = 'nb-theme';
+  const btn  = document.getElementById('gameThemeToggle');
+  const icon = document.getElementById('themeIcon');
+
+  /* icons */
+  const ICONS = { light: '☀️', dark: '🌙' };
+
+  function getInitialTheme(){
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(saved) return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function applyTheme(theme, animate){
+    const isDark = theme === 'dark';
+    document.documentElement.classList.toggle('dark', isDark);
+    /* show the icon representing current mode (sun = you're in dark, moon = you're in light) */
+    icon.textContent = isDark ? ICONS.light : ICONS.dark;
+    btn.setAttribute('title', isDark ? 'Passa al tema chiaro' : 'Passa al tema scuro');
+
+    if(animate){
+      /* spin icon */
+      btn.classList.remove('spinning','pulse-ring');
+      void btn.offsetWidth;
+      btn.classList.add('spinning','pulse-ring');
+      btn.addEventListener('animationend', ()=>{
+        btn.classList.remove('spinning','pulse-ring');
+      }, {once:true});
+
+      /* full-page ripple */
+      const r = btn.getBoundingClientRect();
+      const cx = r.left + r.width/2, cy = r.top + r.height/2;
+      const maxR = Math.hypot(Math.max(cx, innerWidth-cx), Math.max(cy, innerHeight-cy));
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position:fixed;top:0;left:0;width:100vw;height:100vh;
+        pointer-events:none;z-index:99999;overflow:hidden;
+      `;
+      const circle = document.createElement('div');
+      circle.style.cssText = `
+        position:absolute;
+        left:${cx}px;top:${cy}px;
+        width:0;height:0;
+        border-radius:50%;
+        background:${isDark ? 'rgba(13,21,20,.92)' : 'rgba(251,247,239,.92)'};
+        transform:translate(-50%,-50%);
+        transition:width 0.58s cubic-bezier(.4,0,.2,1),
+                   height 0.58s cubic-bezier(.4,0,.2,1),
+                   opacity 0.18s 0.48s ease;
+      `;
+      overlay.appendChild(circle);
+      document.body.appendChild(overlay);
+      requestAnimationFrame(()=>{
+        circle.style.width = circle.style.height = maxR * 2.2 + 'px';
+      });
+      setTimeout(()=>{ circle.style.opacity = '0'; }, 480);
+      setTimeout(()=>{ overlay.remove(); }, 720);
+    }
+  }
+
+  /* boot */
+  const theme = getInitialTheme();
+  applyTheme(theme, false);
+
+  /* toggle */
+  btn.addEventListener('click', ()=>{
+    const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+    localStorage.setItem(STORAGE_KEY, next);
+    applyTheme(next, true);
+  });
+})();
+</script>
 </body>
 </html>

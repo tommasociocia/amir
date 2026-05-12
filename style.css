@@ -43,6 +43,8 @@ button {
 }
 
 .topbar {
+  position: relative;
+  z-index: 1000;
   min-height: 78px;
   display: flex;
   align-items: center;
@@ -100,6 +102,7 @@ button {
 
 .objective-wrap {
   position: relative;
+  flex-shrink: 0;
 }
 
 .objective-btn {
@@ -111,6 +114,7 @@ button {
   padding: 0 12px;
   font-weight: 700;
   cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .objective-btn:hover {
@@ -118,41 +122,142 @@ button {
   color: var(--accent);
 }
 
+.objective-btn.objective-flash {
+  border-color: var(--success);
+  color: var(--success);
+  box-shadow: 0 0 0 5px rgba(22, 128, 60, 0.14);
+  animation: objectiveButtonPop 0.68s ease;
+}
+
 .objective-panel {
   position: absolute;
-  top: 48px;
+  top: calc(100% + 8px);
   right: 0;
-  width: 320px;
-  padding: 10px;
+  width: min(360px, calc(100vw - 24px));
+  padding: 8px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface-strong);
   box-shadow: var(--shadow);
   display: none;
-  z-index: 40;
+  z-index: 1001;
   max-height: 320px;
   overflow-y: auto;
 }
 
 .objective-panel.show {
   display: block;
+  animation: objectivePanelIn 0.18s ease-out;
 }
 
 .objective-item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 8px 10px;
-  background: #faf6ed;
+  padding: 9px 10px;
+  background: #fffaf0;
   font-size: 13px;
   line-height: 1.4;
+  min-height: 44px;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
+
 .objective-item.done {
   border-color: #8ecfae;
   background: #eef8ee;
 }
 
+.objective-item.just-completed {
+  animation: objectiveComplete 0.86s ease both;
+}
+
+.objective-icon {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 14px;
+}
+
+.objective-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.objective-xp {
+  justify-self: end;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: #ecf8f5;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.objective-item.done .objective-xp {
+  background: #dcfce7;
+  color: var(--success);
+}
+
 .objective-item + .objective-item {
   margin-top: 8px;
+}
+
+@keyframes objectivePanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes objectiveComplete {
+  0% {
+    transform: scale(0.98);
+    box-shadow: 0 0 0 0 rgba(22, 128, 60, 0);
+  }
+  35% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 6px rgba(22, 128, 60, 0.16);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(22, 128, 60, 0);
+  }
+}
+
+@keyframes objectiveButtonPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+@keyframes statPop {
+  0% { transform: scale(1); }
+  45% {
+    transform: scale(1.06);
+    border-color: var(--success);
+    box-shadow: 0 0 0 5px rgba(22, 128, 60, 0.12);
+  }
+  100% { transform: scale(1); }
+}
+
+@keyframes timerDangerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.72; }
+}
+
+@keyframes timerDangerText {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
 }
 
 .level-tab {
@@ -213,7 +318,13 @@ button {
   line-height: 1;
 }
 
+.stat.stat-pop {
+  animation: statPop 0.52s ease;
+}
+
 .app-shell {
+  position: relative;
+  z-index: 1;
   flex: 1;
   display: grid;
   grid-template-columns: 240px minmax(520px, 1fr) 280px;
@@ -240,9 +351,6 @@ button {
 
 .mission-panel {
   overflow: auto;
-}
-
-.mission-panel {
   border-left: 1px solid var(--line);
 }
 
@@ -252,10 +360,6 @@ button {
 
 .toolbox > section:not(.quick-help) {
   flex-shrink: 0;
-}
-
-.mission-card + .mission-card {
-  margin-top: 10px;
 }
 
 .toolbox h2 {
@@ -382,11 +486,13 @@ button {
 }
 
 .workspace {
+  position: relative;
   min-width: 0;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
   padding: 0;
   gap: 10px;
+  min-height: 0;
 }
 
 .workspace-toolbar {
@@ -400,6 +506,98 @@ button {
   border-radius: var(--radius);
   background: var(--surface-strong);
   box-shadow: 0 10px 30px rgba(57, 47, 31, 0.07);
+}
+
+.run-hud {
+  flex: 1;
+  min-width: 280px;
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) auto minmax(140px, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.time-chip,
+.budget-chip,
+.event-chip {
+  min-height: 40px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fffaf1;
+}
+
+.time-chip span,
+.budget-chip span,
+.event-chip span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.time-chip strong,
+.budget-chip strong,
+.event-chip strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.time-bar {
+  height: 5px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eadfcd;
+}
+
+.time-bar span {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.45s linear, background 0.2s ease;
+}
+
+.time-bar span.is-hot {
+  background: var(--danger);
+  animation: timerDangerPulse 1.35s ease-in-out infinite;
+}
+
+.time-bar span.is-expired {
+  background: var(--danger);
+  animation: none;
+}
+
+.time-chip strong.is-danger {
+  color: var(--danger);
+  animation: timerDangerText 1.35s ease-in-out infinite;
+}
+
+.time-chip strong.is-expired {
+  color: var(--danger);
+  animation: none;
+}
+
+.budget-chip strong.is-over {
+  color: var(--danger);
+}
+
+.event-chip {
+  background: #fff8e7;
+  border-color: #e7c975;
+}
+
+.event-chip strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #7a4d00;
 }
 
 .eyebrow {
@@ -452,7 +650,7 @@ button {
 .board-wrap {
   position: relative;
   flex: 1;
-  min-height: 440px;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -460,6 +658,48 @@ button {
     linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 242, 231, 0.88)),
     #fffaf1;
   box-shadow: var(--shadow);
+}
+
+.console-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  height: var(--console-height, 190px);
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+  box-shadow: 0 10px 30px rgba(57, 47, 31, 0.07);
+  overflow: hidden;
+}
+
+.console-resizer {
+  height: 8px;
+  flex-shrink: 0;
+  cursor: ns-resize;
+  background:
+    linear-gradient(90deg, transparent, rgba(100, 113, 111, 0.28), transparent),
+    var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.console-resizer::before {
+  content: "";
+  display: block;
+  width: 52px;
+  height: 3px;
+  margin: 2px auto 0;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+
+.console-header {
+  flex-shrink: 0;
+  padding: 10px 12px 0;
 }
 
 #board {
@@ -584,12 +824,49 @@ button {
   box-shadow: 0 8px 24px rgba(57, 47, 31, 0.06);
 }
 
+.mission-card + .mission-card {
+  margin-top: 10px;
+}
+
 #objectiveText {
   margin-top: 10px;
   color: var(--ink);
   font-size: 14px;
   line-height: 1.55;
   white-space: pre-line;
+}
+
+.challenge-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.challenge-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #faf6ed;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.challenge-item strong {
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.challenge-reward {
+  padding: 8px 9px;
+  border-radius: var(--radius);
+  background: #ecf8f5;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .checklist {
@@ -628,12 +905,21 @@ button {
 }
 
 .network-log {
-  height: 270px;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 12px;
+  margin: 8px 12px 12px;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.network-log::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .log-entry {
@@ -687,6 +973,45 @@ button {
   transform: translateX(-50%) translateY(0);
 }
 
+.xp-burst {
+  position: fixed;
+  left: 50%;
+  top: 112px;
+  z-index: 2200;
+  min-width: 180px;
+  padding: 12px 16px;
+  border: 1px solid #8ecfae;
+  border-radius: var(--radius);
+  background: #eef8ee;
+  color: #14532d;
+  box-shadow: var(--shadow);
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -8px) scale(0.94);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.xp-burst.show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.xp-burst strong,
+.xp-burst span {
+  display: block;
+}
+
+.xp-burst strong {
+  font-size: 22px;
+}
+
+.xp-burst span {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .context-menu {
   position: fixed;
   z-index: 1200;
@@ -702,6 +1027,11 @@ button {
 .context-menu.show {
   display: grid;
   gap: 4px;
+}
+
+body.is-resizing-console {
+  cursor: ns-resize;
+  user-select: none;
 }
 
 .context-menu button {
@@ -779,10 +1109,25 @@ button {
     flex-wrap: wrap;
   }
 
+  .workspace-toolbar {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .run-hud {
+    order: 3;
+    flex-basis: 100%;
+    grid-template-columns: minmax(150px, 1fr) auto minmax(150px, 1fr);
+  }
+
   .app-shell {
     height: calc(100vh - 150px);
     min-height: 620px;
     grid-template-columns: 230px minmax(460px, 1fr);
+  }
+
+  .workspace {
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .mission-panel {
@@ -796,4 +1141,292 @@ button {
   .board-wrap {
     height: auto;
   }
+}
+
+@media (max-width: 760px) {
+  .run-hud {
+    grid-template-columns: 1fr 92px;
+  }
+
+  .event-chip {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE — NetBuilder game
+   ════════════════════════════════════════════════════════════ */
+
+:root {
+  --theme-transition:
+    background-color 0.5s cubic-bezier(.4,0,.2,1),
+    background 0.5s cubic-bezier(.4,0,.2,1),
+    color 0.5s cubic-bezier(.4,0,.2,1),
+    border-color 0.5s cubic-bezier(.4,0,.2,1),
+    box-shadow 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+html.dark {
+  --paper:          #0d1514;
+  --surface:        #111b19;
+  --surface-strong: #162220;
+  --ink:            #dceae6;
+  --muted:          #7a9e96;
+  --line:           #243330;
+  --line-strong:    #2e4340;
+  --accent:         #2dd4bf;
+  --accent-2:       #60a5fa;
+  --success:        #34d399;
+  --warning:        #fbbf24;
+  --danger:         #f87171;
+  --cable:          #7a9e96;
+  --shadow:         0 18px 45px rgba(0,0,0,0.45);
+}
+
+html.dark body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+html.dark .topbar {
+  background: rgba(13,21,20,.92);
+  border-color: var(--line);
+}
+
+html.dark .brand-mark {
+  background: rgba(45,212,191,.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+html.dark .toolbox {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+html.dark .device-btn {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+html.dark .device-btn:hover {
+  border-color: var(--accent);
+  background: rgba(45,212,191,.08);
+}
+
+html.dark .cable-tool {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+html.dark .cable-tool.is-active {
+  border-color: var(--accent);
+  background: rgba(45,212,191,.1);
+}
+
+html.dark .workspace-toolbar {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+html.dark .board-wrap {
+  background: var(--paper);
+}
+
+html.dark svg#board rect {
+  fill: var(--paper);
+}
+
+html.dark .grid-line {
+  stroke: rgba(45,212,191,.06);
+}
+
+html.dark .mission-panel {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+html.dark .mission-card {
+  background: var(--surface-strong);
+  border-color: var(--line);
+}
+
+html.dark .console-panel {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+html.dark .btn.secondary {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+html.dark .btn.secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+html.dark .btn.primary {
+  background: var(--accent);
+  color: #0d1514;
+}
+
+html.dark .level-tab {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+html.dark .level-tab.active {
+  background: var(--accent);
+  color: #0d1514;
+  border-color: var(--accent);
+}
+
+html.dark .objective-btn {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+html.dark .objective-panel {
+  background: var(--surface-strong);
+  border-color: var(--line);
+}
+
+html.dark .objective-item {
+  background: rgba(45,212,191,.05);
+  border-color: var(--line);
+}
+
+html.dark .objective-item.done {
+  background: rgba(52,211,153,.08);
+  border-color: rgba(52,211,153,.25);
+}
+
+html.dark .objective-xp {
+  background: rgba(45,212,191,.12);
+  color: var(--accent);
+}
+
+html.dark .result-modal {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+html.dark .result-modal::backdrop {
+  background: rgba(0,0,0,.55);
+}
+
+html.dark .result-icon {
+  background: rgba(45,212,191,.12);
+  color: var(--accent);
+}
+
+html.dark .result-info {
+  background: rgba(45,212,191,.06);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+html.dark .checklist-item {
+  color: var(--ink);
+}
+
+html.dark .checklist-item.ok {
+  color: var(--success);
+}
+
+html.dark .context-menu {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+html.dark .context-menu button:hover {
+  background: rgba(45,212,191,.08);
+  color: var(--accent);
+}
+
+html.dark .toast {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+html.dark .time-chip,
+html.dark .budget-chip,
+html.dark .event-chip {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+/* smooth transitions on game elements */
+body, .topbar, .toolbox, .mission-panel, .mission-card,
+.console-panel, .workspace-toolbar, .board-wrap,
+.device-btn, .cable-tool, .btn, .level-tab,
+.objective-btn, .objective-panel, .objective-item,
+.result-modal, .context-menu, .toast,
+.time-chip, .budget-chip, .event-chip {
+  transition: var(--theme-transition);
+}
+
+/* ── THEME TOGGLE BUTTON ──────────────────────────────────── */
+.theme-toggle {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--surface-strong);
+  color: var(--ink);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  transition:
+    transform 0.45s cubic-bezier(.34,1.56,.64,1),
+    box-shadow 0.45s cubic-bezier(.4,0,.2,1),
+    background 0.5s cubic-bezier(.4,0,.2,1),
+    border-color 0.5s cubic-bezier(.4,0,.2,1);
+  flex-shrink: 0;
+}
+.theme-toggle:hover {
+  transform: scale(1.12) rotate(-10deg);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(45,212,191,.15);
+}
+html.dark .theme-toggle {
+  background: rgba(13,21,20,.9);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(45,212,191,.2);
+}
+
+/* icon flip animation */
+.theme-toggle .t-icon {
+  display: block;
+  transition: transform 0.5s cubic-bezier(.34,1.56,.64,1), opacity 0.3s ease;
+  transform-origin: center;
+}
+.theme-toggle.spinning .t-icon {
+  animation: iconSpin 0.5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes iconSpin {
+  0%   { transform: rotate(0deg)   scale(1); }
+  40%  { transform: rotate(200deg) scale(0); }
+  70%  { transform: rotate(340deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* pulse ring on toggle */
+@keyframes toggleRingGame {
+  0%   { box-shadow: 0 0 0 0 rgba(45,212,191,.55), 0 0 0 2px rgba(45,212,191,.2); }
+  60%  { box-shadow: 0 0 0 16px rgba(45,212,191,0), 0 0 0 2px rgba(45,212,191,.2); }
+  100% { box-shadow: 0 0 0 0 rgba(45,212,191,0), 0 0 0 2px rgba(45,212,191,.2); }
+}
+.theme-toggle.pulse-ring {
+  animation: toggleRingGame 0.65s cubic-bezier(.4,0,.2,1);
 }

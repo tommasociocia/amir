@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NetBuilder — Costruisci la tua Rete</title>
+<script>
+  (function(){
+    var s=localStorage.getItem('nb-theme');
+    if(!s) s=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+    if(s==='dark') document.documentElement.classList.add('dark');
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -546,6 +553,165 @@ footer strong{color:var(--ink-soft)}
 /* ─── RIPPLE ─── */
 .rpl{position:absolute;border-radius:50%;background:rgba(255,255,255,.35);transform:scale(0);animation:rplA .55s linear forwards;pointer-events:none;z-index:10}
 @keyframes rplA{to{transform:scale(5);opacity:0}}
+
+/* ─── DARK MODE ─── */
+:root {
+  --theme-transition: background 0.55s cubic-bezier(.4,0,.2,1),
+                      color 0.55s cubic-bezier(.4,0,.2,1),
+                      border-color 0.55s cubic-bezier(.4,0,.2,1),
+                      box-shadow 0.55s cubic-bezier(.4,0,.2,1),
+                      backdrop-filter 0.55s cubic-bezier(.4,0,.2,1);
+}
+
+html.dark {
+  --sand:       #0e1312;
+  --sand-warm:  #121918;
+  --sand-deep:  #161f1e;
+  --teal:       #2dd4bf;
+  --teal-light: #5eead4;
+  --teal-pale:  rgba(45,212,191,.08);
+  --ink:        #e8f0ee;
+  --ink-soft:   #b0c4be;
+  --muted:      #7a9e96;
+  --border:     rgba(255,255,255,.08);
+
+  --glass-bg:      rgba(18,28,26,.72);
+  --glass-bg2:     rgba(18,28,26,.55);
+  --glass-blur:    blur(40px) saturate(1.6);
+  --glass-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,.07),
+    inset 0 -1px 0 rgba(0,0,0,.35),
+    0 8px 40px rgba(0,0,0,.35),
+    0 0 0 1px rgba(255,255,255,.06);
+  --glass-shadow-sm:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -1px 0 rgba(0,0,0,.28),
+    0 4px 20px rgba(0,0,0,.28),
+    0 0 0 1px rgba(255,255,255,.05);
+}
+
+html.dark body {
+  background: var(--sand);
+  color: var(--ink);
+}
+
+html.dark .page-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 0%,   rgba(45,212,191,.05) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 80% at 85% 100%, rgba(45,212,191,.06) 0%, transparent 55%),
+    radial-gradient(ellipse 100% 60% at 50% 50%, rgba(18,30,28,.95) 0%, transparent 65%),
+    var(--sand);
+}
+
+html.dark nav.stuck {
+  background: rgba(14,19,18,.82);
+  border-color: rgba(255,255,255,.06);
+}
+
+html.dark .nav-pill {
+  background: rgba(20,32,30,.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.07),
+    inset 0 -1px 0 rgba(0,0,0,.3),
+    0 4px 20px rgba(0,0,0,.3),
+    0 0 0 1px rgba(255,255,255,.06);
+}
+
+html.dark .nav-pill::before {
+  background: linear-gradient(180deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,0) 100%);
+}
+
+html.dark .nav-links a { color: var(--ink-soft); }
+html.dark .nav-links a:hover { background: rgba(255,255,255,.06); color: var(--ink); }
+
+html.dark .nav-cta {
+  background: var(--teal);
+  color: #0e1312;
+}
+
+html.dark .chip {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.08);
+  color: var(--ink-soft);
+}
+
+html.dark .board-inner {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.06);
+}
+
+html.dark .demo-item {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.06);
+}
+
+html.dark .demo-item:hover { background: rgba(255,255,255,.08); }
+
+html.dark .step-tag {
+  background: rgba(45,212,191,.12);
+  color: var(--teal);
+}
+
+html.dark .concept-icon { filter: brightness(1.1); }
+
+html.dark #cur .dot { background: var(--teal); }
+html.dark #cur .ring { border-color: var(--teal); }
+
+html.dark footer {
+  background: rgba(0,0,0,.3);
+  border-color: rgba(255,255,255,.06);
+}
+
+/* section backgrounds */
+html.dark [style*="background:var(--sand)"] { background: var(--sand) !important; }
+html.dark [style*="background:var(--sand-warm)"] { background: var(--sand-warm) !important; }
+html.dark [style*="background:var(--sand-deep)"] { background: var(--sand-deep) !important; }
+
+/* smooth transition on all key elements */
+body, nav, .nav-pill, .glass, .glass-sm, .chip, .board-inner,
+.demo-item, footer, .page-bg, .nav-cta, .nav-links a, .step-tag {
+  transition: var(--theme-transition);
+}
+
+/* nav-logo dark toggle button style */
+.nav-logo {
+  cursor: pointer;
+  transition: transform 0.45s cubic-bezier(.34,1.56,.64,1),
+              box-shadow 0.45s cubic-bezier(.4,0,.2,1),
+              background 0.55s cubic-bezier(.4,0,.2,1);
+  user-select: none;
+}
+
+.nav-logo:hover {
+  transform: scale(1.1) rotate(-8deg);
+}
+
+/* dark-active state: filled dark circle */
+html.dark .nav-logo.glass-sm {
+  background: rgba(14,22,20,.9) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 0 0 2px var(--teal),
+    0 8px 32px rgba(45,212,191,.25);
+}
+
+/* pulse ring animation on toggle */
+@keyframes themeRing {
+  0%   { box-shadow: 0 0 0 0 rgba(45,212,191,.6), inset 0 1px 0 rgba(255,255,255,.08); }
+  60%  { box-shadow: 0 0 0 18px rgba(45,212,191,0), inset 0 1px 0 rgba(255,255,255,.08); }
+  100% { box-shadow: 0 0 0 0 rgba(45,212,191,0), inset 0 1px 0 rgba(255,255,255,.08); }
+}
+@keyframes themeRingLight {
+  0%   { box-shadow: 0 0 0 0 rgba(15,118,110,.5), var(--glass-shadow-sm); }
+  60%  { box-shadow: 0 0 0 18px rgba(15,118,110,0), var(--glass-shadow-sm); }
+  100% { box-shadow: 0 0 0 0 rgba(15,118,110,0), var(--glass-shadow-sm); }
+}
+.nav-logo.theme-pulse-dark  { animation: themeRing 0.7s cubic-bezier(.4,0,.2,1); }
+.nav-logo.theme-pulse-light { animation: themeRingLight 0.7s cubic-bezier(.4,0,.2,1); }
+
+/* ─── DARK MODE SVG board ─── */
+html.dark .board-inner rect[fill="url(#dots)"] ~ * text { fill: var(--ink) !important; }
 </style>
 </head>
 <body>
@@ -1081,6 +1247,87 @@ window.addEventListener('scroll',()=>{
     hb.style.opacity=Math.max(0,1-y/(h*.68));
   }
 },{passive:true});
+
+/* ── DARK MODE TOGGLE ─────────────────────────────────────── */
+(function(){
+  const STORAGE_KEY = 'nb-theme';
+  const logo = document.querySelector('.nav-logo');
+
+  /* 1. detect initial preference */
+  function getInitialTheme(){
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(saved) return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  /* 2. apply theme without animation (used at boot) */
+  function applyTheme(theme, animate){
+    const html = document.documentElement;
+    const isDark = theme === 'dark';
+    html.classList.toggle('dark', isDark);
+
+    /* update logo glyph: moon in light mode (click to go dark), sun in dark */
+    logo.textContent = isDark ? '☀' : '☽';
+
+    if(animate){
+      const cls = isDark ? 'theme-pulse-dark' : 'theme-pulse-light';
+      logo.classList.remove('theme-pulse-dark','theme-pulse-light');
+      void logo.offsetWidth; /* reflow */
+      logo.classList.add(cls);
+      logo.addEventListener('animationend', ()=> logo.classList.remove(cls), {once:true});
+
+      /* ripple from the logo across the whole page */
+      const r = logo.getBoundingClientRect();
+      const cx = r.left + r.width/2, cy = r.top + r.height/2;
+      const maxR = Math.hypot(Math.max(cx, innerWidth-cx), Math.max(cy, innerHeight-cy));
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position:fixed;top:0;left:0;width:100vw;height:100vh;
+        pointer-events:none;z-index:9998;overflow:hidden;
+      `;
+      const circle = document.createElement('div');
+      circle.style.cssText = `
+        position:absolute;
+        left:${cx}px;top:${cy}px;
+        width:0;height:0;
+        border-radius:50%;
+        background:${isDark ? 'rgba(14,19,18,.92)' : 'rgba(251,247,239,.92)'};
+        transform:translate(-50%,-50%);
+        transition:width 0.62s cubic-bezier(.4,0,.2,1),
+                   height 0.62s cubic-bezier(.4,0,.2,1),
+                   opacity 0.18s 0.52s ease;
+      `;
+      overlay.appendChild(circle);
+      document.body.appendChild(overlay);
+      requestAnimationFrame(()=>{
+        circle.style.width = circle.style.height = maxR*2.2+'px';
+      });
+      setTimeout(()=>{ circle.style.opacity='0'; }, 520);
+      setTimeout(()=>{ overlay.remove(); }, 750);
+    }
+  }
+
+  /* 3. boot */
+  const theme = getInitialTheme();
+  applyTheme(theme, false);
+
+  /* 4. click handler */
+  logo.style.cursor = 'pointer';
+  logo.addEventListener('click', ()=>{
+    const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+    localStorage.setItem(STORAGE_KEY, next);
+    applyTheme(next, true);
+  });
+
+  /* 5. spin animation on hover */
+  logo.addEventListener('mouseenter', ()=>{
+    gsap.to(logo, {rotation: logo.parentElement.classList?.contains('dark') ? -15 : 15,
+      scale:1.12, duration:.35, ease:'back.out(2)'});
+  });
+  logo.addEventListener('mouseleave', ()=>{
+    gsap.to(logo, {rotation:0, scale:1, duration:.4, ease:'power3.out'});
+  });
+})();
 </script>
 </body>
 </html>

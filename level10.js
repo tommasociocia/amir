@@ -10,7 +10,7 @@ window.NetBuilderLevelFactories.level10 = ({ validateFinalBossCampus, finalBossP
     "- 7 switch totali: 1 core + 6 di accesso",
     "- almeno 12 PC (almeno 2 per ogni switch di accesso)",
     "- almeno 3 server sul core",
-    "- doppio perimetro WAN: 2 firewall + 2 router + 2 Internet",
+    "- doppio perimetro WAN dal core: 2 catene core -> firewall -> router -> Internet",
     "- nessun bypass dagli switch di accesso verso firewall/router/Internet",
     "",
     "La prova finale testa piu percorsi PC -> PC e PC -> server.",

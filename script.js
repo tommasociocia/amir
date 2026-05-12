@@ -318,6 +318,7 @@ const BADGES = [
   "netbuilder-completed",
   "netbuilder-levels",
   "netbuilder-passed-gates",
+  "netbuilder-objectives",
 ].forEach(k => localStorage.removeItem(k));
 
 /* ─── STATE ──────────────────────────────────────────────────── */
@@ -340,14 +341,42 @@ const state = {
   perfectQuizzes: 0,
   fastCompletes: 0,
   levelStartTime: null,
+  timerStarted: false,
+  timerHandle: null,
   earnedBadges: new Set(),
+  earnedObjectives: new Set(),
   passedGateQuizzes: new Set(JSON.parse(localStorage.getItem("netbuilder-passed-gates") || "[]")),
   contextTarget: null,
+  levelErrors: 0,
+  comboStreak: 0,
+  activeIncident: null,
+  lastIncidentTarget: null,
+  challengeAwards: new Set(),
 };
 
 /* ─── LEVEL DEFINITIONS ─────────────────────────────────────── */
 const LEVELS = {};
 const MAX_LEVEL = 10;
+
+const LEVEL_GAMEPLAY = {
+  1: { ticket: "Ufficio segreteria: 4 postazioni devono condividere la stessa LAN senza confusione di cavi.", challenge: { time: 60, cables: 4, xp: 12 } },
+  2: { ticket: "Due laboratori devono parlarsi ma restare su reti separate: il router deve fare da ponte L3.", challenge: { time: 150, cables: 8, xp: 18 } },
+  3: { ticket: "Laboratorio storico: ricrea un anello stabile e fai circolare il token senza diramazioni.", challenge: { time: 140, cables: 6, xp: 20 } },
+  4: { ticket: "La LAN deve uscire su Internet, ma il preside vuole tutto il traffico filtrato dal firewall.", challenge: { time: 150, cables: 5, xp: 22 } },
+  5: { ticket: "Scuola media: tre aule, un server centrale e un perimetro WAN controllato.", challenge: { time: 260, cables: 12, xp: 30 } },
+  6: { ticket: "Aula informatica: tre client devono raggiungere un server locale con una LAN pulita.", challenge: { time: 110, cables: 4, xp: 16 } },
+  7: { ticket: "Due reparti devono comunicare tra loro e uscire su Internet senza bypassare il firewall.", challenge: { time: 220, cables: 10, xp: 28 } },
+  8: { ticket: "Campus piccolo: accesso, core, server e perimetro devono restare separati.", challenge: { time: 330, cables: 16, xp: 36 } },
+  9: { ticket: "Pre-collaudo enterprise: il campus cresce, ma la gerarchia non deve rompersi.", challenge: { time: 390, cables: 18, xp: 42 } },
+  10:{ ticket: "Final boss: architettura enterprise con doppio perimetro e core sotto pressione.", challenge: { time: 480, cables: 25, xp: 55 } },
+};
+
+const INCIDENTS = [
+  { tag: "Guasto sospetto", text: type => `attenzione al ${type}: se lo colleghi fuori schema perdi il bonus precisione.` },
+  { tag: "Audit sicurezza", text: type => `controllo improvviso sul ${type}: nessun bypass e nessun collegamento scorciatoia.` },
+  { tag: "Finestra manutenzione", text: type => `il ${type} e sotto osservazione: resta nel tempo bonus per chiudere l'intervento.` },
+  { tag: "Diagnosi richiesta", text: type => `verifica bene il ${type}: la console segnalera subito gli errori di progetto.` },
+];
 
 /* ── Validation helpers ─────────────────────────────────────── */
 function getNeighbors(nodeId) {
@@ -367,6 +396,50 @@ function bfsReachable(startId) {
 function nodesByType(type) { return state.nodes.filter(n => n.type === type); }
 function straightCables() { return state.cables.filter(c => c.type === "straight"); }
 function crossCables()    { return state.cables.filter(c => c.type === "cross"); }
+function nodeById(id) { return state.nodes.find(n => n.id === id); }
+function hasLink(aId, bId) { return getNeighbors(aId).includes(bId); }
+function neighborsByType(node, type) {
+  if (!node) return [];
+  return getNeighbors(node.id).map(nodeById).filter(n => n && n.type === type);
+}
+function findCampusCore(accessCount, minPcPerAccess) {
+  return nodesByType("switch").map(core => {
+    const access = neighborsByType(core, "switch");
+    const pcGroupsOk = access.length >= accessCount && access.every(sw =>
+      neighborsByType(sw, "pc").length >= minPcPerAccess
+    );
+    return { core, access, pcGroupsOk };
+  }).find(candidate => candidate.access.length >= accessCount && candidate.pcGroupsOk) || null;
+}
+function hasWanChain(core) {
+  return wanChainCount(core) > 0;
+}
+function wanChainCount(core) {
+  if (!core) return 0;
+  const usedRouters = new Set();
+  const usedInternets = new Set();
+  let count = 0;
+  nodesByType("firewall").forEach(fw => {
+    if (!hasLink(core.id, fw.id)) return;
+    const rt = neighborsByType(fw, "router").find(router => !usedRouters.has(router.id) &&
+      neighborsByType(router, "internet").some(inet => !usedInternets.has(inet.id))
+    );
+    if (!rt) return;
+    const inet = neighborsByType(rt, "internet").find(node => !usedInternets.has(node.id));
+    if (!inet) return;
+    usedRouters.add(rt.id);
+    usedInternets.add(inet.id);
+    count++;
+  });
+  return count;
+}
+function accessHasNoBypass(access) {
+  const bypassTypes = new Set(["firewall", "router", "internet"]);
+  return access.every(sw => getNeighbors(sw.id).every(id => {
+    const nd = nodeById(id);
+    return !nd || !bypassTypes.has(nd.type);
+  }));
+}
 
 /* ── pc pairs for simulation ───────────────────────────────── */
 function pcPairs() {
@@ -448,6 +521,7 @@ function validateTwoSubnets() {
   if (pcs.length !== 6) errs.push(`Hai ${pcs.length} PC, ne servono 6`);
   if (switches.length !== 2) errs.push(`Hai ${switches.length} switch, ne servono 2`);
   if (routers.length !== 1) errs.push(`Hai ${routers.length} router, ne serve 1`);
+  if (crossCables().length > 0) errs.push("Usa solo cavi dritti");
   if (routers.length === 1 && switches.length === 2) {
     const r = routers[0];
     const rNeigh = getNeighbors(r.id);
@@ -489,7 +563,7 @@ function validateFirewall() {
   const routers = nodesByType("router");
   const internets = nodesByType("internet");
   const errs = [];
-  if (pcs.length < 2) errs.push("Servono almeno 2 PC");
+  if (pcs.length !== 2) errs.push(`Hai ${pcs.length} PC, ne servono esattamente 2`);
   if (switches.length < 1) errs.push("Serve uno switch interno");
   if (firewalls.length !== 1) errs.push("Serve esattamente 1 firewall");
   if (routers.length !== 1) errs.push("Serve esattamente 1 router");
@@ -614,6 +688,133 @@ function validateFinalBossCampus() {
 }
 
 /* ─── BUILD LEVELS ──────────────────────────────────────────── */
+// Validatori allineati ai requisiti mostrati nei pannelli livello.
+function validateFirewallAligned() {
+  const pcs = nodesByType("pc");
+  const switches = nodesByType("switch");
+  const firewalls = nodesByType("firewall");
+  const routers = nodesByType("router");
+  const internets = nodesByType("internet");
+  const errs = [];
+  if (pcs.length !== 2) errs.push(`Hai ${pcs.length} PC, ne servono esattamente 2`);
+  if (switches.length < 1) errs.push("Serve uno switch interno");
+  if (firewalls.length !== 1) errs.push("Serve esattamente 1 firewall");
+  if (routers.length !== 1) errs.push("Serve esattamente 1 router");
+  if (internets.length !== 1) errs.push("Serve il nodo Internet");
+  if (switches.length && firewalls.length === 1 && routers.length === 1) {
+    const sw = switches[0];
+    const fw = firewalls[0];
+    const rt = routers[0];
+    if (!hasLink(sw.id, fw.id)) errs.push("Lo switch non e collegato al firewall");
+    if (!hasLink(fw.id, rt.id)) errs.push("Il firewall non e collegato al router");
+    if (internets.length === 1 && !hasLink(rt.id, internets[0].id)) errs.push("Il router non e collegato a Internet");
+    pcs.forEach(pc => {
+      if (!hasLink(pc.id, sw.id)) errs.push(`${pc.label} non e collegato allo switch interno`);
+      if (hasLink(pc.id, rt.id)) errs.push(`${pc.label} e collegato direttamente al router (bypass firewall)`);
+    });
+    switches.forEach(lanSw => {
+      if (hasLink(lanSw.id, rt.id) || (internets.length === 1 && hasLink(lanSw.id, internets[0].id)))
+        errs.push("La LAN non deve collegarsi direttamente a router o Internet");
+    });
+  }
+  return errs;
+}
+
+function validateCampusLike(accessCount, minPcPerAccess, switchTotal, minServers, wanCount, label) {
+  const pcs = nodesByType("pc");
+  const switches = nodesByType("switch");
+  const servers = nodesByType("server");
+  const firewalls = nodesByType("firewall");
+  const routers = nodesByType("router");
+  const internets = nodesByType("internet");
+  const errs = [];
+  const minPcTotal = accessCount * minPcPerAccess;
+
+  if (pcs.length < minPcTotal) errs.push(`Hai ${pcs.length} PC, ne servono almeno ${minPcTotal}`);
+  if (switches.length !== switchTotal) errs.push(`Hai ${switches.length} switch, ne servono ${switchTotal} (1 centrale + ${accessCount} accesso)`);
+  if (servers.length < minServers) errs.push(`Hai ${servers.length} server, ne servono almeno ${minServers}`);
+  if (firewalls.length !== wanCount) errs.push(`Hai ${firewalls.length} firewall, ne servono ${wanCount}`);
+  if (routers.length !== wanCount) errs.push(`Hai ${routers.length} router, ne servono ${wanCount}`);
+  if (internets.length !== wanCount) errs.push(`Hai ${internets.length} nodi Internet, ne servono ${wanCount}`);
+
+  const campus = findCampusCore(accessCount, minPcPerAccess);
+  if (!campus) {
+    errs.push(`Serve 1 switch centrale collegato a ${accessCount} switch di accesso, con almeno ${minPcPerAccess} PC per switch`);
+    return errs;
+  }
+
+  if (servers.filter(server => hasLink(campus.core.id, server.id)).length < minServers)
+    errs.push("I server richiesti devono essere collegati allo switch centrale");
+  if (wanChainCount(campus.core) < wanCount)
+    errs.push(wanCount === 1
+      ? "L'uscita deve essere: switch centrale -> firewall -> router -> Internet"
+      : "Servono 2 catene WAN dal core: core -> firewall -> router -> Internet");
+  if (!accessHasNoBypass(campus.access))
+    errs.push(`Gli switch ${label} non devono bypassare firewall/router/Internet`);
+  return errs;
+}
+
+validateFirewall = validateFirewallAligned;
+validateClientServerLan = () => {
+  const pcs = nodesByType("pc");
+  const switches = nodesByType("switch");
+  const servers = nodesByType("server");
+  const errs = [];
+  if (pcs.length !== 3) errs.push(`Hai ${pcs.length} PC, ne servono 3`);
+  if (switches.length !== 1) errs.push("Serve 1 switch centrale");
+  if (servers.length !== 1) errs.push("Serve 1 server");
+  if (straightCables().length !== 4) errs.push(`Hai ${straightCables().length} cavi dritti, ne servono 4`);
+  if (crossCables().length > 0) errs.push("Non usare cavi incrociati");
+  if (switches.length === 1) {
+    const sw = switches[0];
+    [...pcs, ...servers].forEach(host => {
+      if (!hasLink(host.id, sw.id)) errs.push(`${host.label} non e collegato allo switch centrale`);
+    });
+  }
+  return errs;
+};
+validateSecureWan = () => {
+  const pcs = nodesByType("pc");
+  const switches = nodesByType("switch");
+  const routers = nodesByType("router");
+  const firewalls = nodesByType("firewall");
+  const internets = nodesByType("internet");
+  const errs = [];
+  if (pcs.length !== 6) errs.push(`Hai ${pcs.length} PC, ne servono 6`);
+  if (switches.length !== 2) errs.push("Servono 2 switch");
+  if (routers.length !== 1) errs.push("Serve 1 router");
+  if (firewalls.length !== 1) errs.push("Serve 1 firewall");
+  if (internets.length !== 1) errs.push("Serve il nodo Internet");
+  if (switches.length === 2) {
+    switches.forEach((sw, i) => {
+      const pcsOnSw = pcs.filter(p => hasLink(p.id, sw.id));
+      if (pcsOnSw.length !== 3) errs.push(`Switch ${i + 1}: hai ${pcsOnSw.length} PC, ne servono 3`);
+    });
+  }
+  if (routers.length === 1) {
+    const rt = routers[0];
+    switches.forEach(sw => {
+      if (!hasLink(rt.id, sw.id)) errs.push("Il router deve essere collegato ai due switch");
+    });
+  }
+  if (routers.length === 1 && firewalls.length === 1 && internets.length === 1) {
+    const rt = routers[0];
+    const fw = firewalls[0];
+    const inet = internets[0];
+    if (!hasLink(rt.id, fw.id)) errs.push("Il router non e collegato al firewall");
+    if (!hasLink(fw.id, inet.id)) errs.push("Il firewall non e collegato a Internet");
+    switches.forEach(sw => {
+      if (hasLink(sw.id, fw.id) || hasLink(sw.id, inet.id))
+        errs.push("Gli switch non devono collegarsi direttamente a firewall o Internet");
+    });
+  }
+  return errs;
+};
+validateSchool = () => validateCampusLike(3, 2, 4, 1, 1, "aula");
+validateCampusEnterprise = () => validateCampusLike(4, 2, 5, 2, 1, "di accesso");
+validatePreFinalCampus = () => validateCampusLike(5, 2, 6, 2, 1, "di accesso");
+validateFinalBossCampus = () => validateCampusLike(6, 2, 7, 3, 2, "di accesso");
+
 const factories = window.NetBuilderLevelFactories || {};
 const helpers = {
   validateLanStar, validateTwoSubnets, validateRing, validateFirewall, validateSchool,
@@ -630,7 +831,7 @@ const helpers = {
 /* ─── DEVICE CATALOG ────────────────────────────────────────── */
 const DEVICE_META = {
   pc:       { label: "PC",       sub: "Host",      color: "#0f766e", maxPorts: 1 },
-  switch:   { label: "Switch",   sub: "L2",        color: "#2563eb", maxPorts: 8 },
+  switch:   { label: "Switch",   sub: "L2",        color: "#2563eb", maxPorts: 16 },
   router:   { label: "Router",   sub: "L3",        color: "#7c3aed", maxPorts: 4 },
   server:   { label: "Server",   sub: "Host",      color: "#0f766e", maxPorts: 2 },
   firewall: { label: "Firewall", sub: "Perimetro", color: "#dc2626", maxPorts: 2 },
@@ -641,6 +842,7 @@ function usedPorts(nodeId) {
   return state.cables.filter(c => c.a === nodeId || c.b === nodeId).length;
 }
 function maxPorts(type) {
+  if (type === "pc" && state.level === 3) return 2;
   return DEVICE_META[type]?.maxPorts ?? 1;
 }
 
@@ -667,8 +869,16 @@ const objectiveBtn = $("objectiveBtn");
 const objectivePanel = $("objectivePanel");
 const levelTitle   = $("levelTitle");
 const objectiveText= $("objectiveText");
+const runTimer     = $("runTimer");
+const timeBar      = $("timeBar");
+const cableBudget  = $("cableBudget");
+const eventChip    = $("eventChip");
+const eventText    = $("eventText");
+const challengeList= $("challengeList");
 const checklist    = $("checklist");
 const networkLog   = $("networkLog");
+const consolePanel = $("consolePanel");
+const consoleResizer = $("consoleResizer");
 const hintBtn      = $("hintBtn");
 const resetBtn     = $("resetBtn");
 const testBtn      = $("testBtn");
@@ -697,6 +907,15 @@ function showToast(msg, dur = 2800) {
   toastTimer = setTimeout(() => toastEl.classList.remove("show"), dur);
 }
 
+function showXpBurst(amount, label) {
+  const burst = document.createElement("div");
+  burst.className = "xp-burst";
+  burst.innerHTML = `<strong>+${amount} XP</strong><span>${label}</span>`;
+  document.body.appendChild(burst);
+  requestAnimationFrame(() => burst.classList.add("show"));
+  setTimeout(() => { burst.classList.remove("show"); setTimeout(() => burst.remove(), 350); }, 1300);
+}
+
 /* ─── LOG ────────────────────────────────────────────────────── */
 function log(msg, cls = "") {
   const el = document.createElement("div");
@@ -711,6 +930,8 @@ function addXP(amount, reason) {
   state.xp += amount;
   state.score += amount;
   statScore.textContent = state.score;
+  statScore.parentElement?.classList.add("stat-pop");
+  setTimeout(() => statScore.parentElement?.classList.remove("stat-pop"), 520);
   showToast(`+${amount} XP — ${reason}`, 2000);
   checkBadges();
 }
@@ -733,6 +954,32 @@ function showBadgePopup(badge) {
   setTimeout(() => { popup.classList.remove("show"); setTimeout(() => popup.remove(), 400); }, 3500);
 }
 
+function initConsoleResize() {
+  if (!consolePanel || !consoleResizer) return;
+  let startY = 0;
+  let startHeight = 0;
+
+  function onMove(e) {
+    const next = Math.max(96, Math.min(window.innerHeight * 0.48, startHeight - (e.clientY - startY)));
+    consolePanel.parentElement?.style.setProperty("--console-height", `${Math.round(next)}px`);
+  }
+
+  function onUp() {
+    document.body.classList.remove("is-resizing-console");
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+  }
+
+  consoleResizer.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    startY = e.clientY;
+    startHeight = consolePanel.getBoundingClientRect().height;
+    document.body.classList.add("is-resizing-console");
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  });
+}
+
 /* ─── QUIZ MODAL ─────────────────────────────────────────────── */
 function showQuizModal(quizKey, onComplete) {
   const quiz = QUIZ_DB[quizKey];
@@ -752,7 +999,7 @@ function showQuizModal(quizKey, onComplete) {
         <button class="quiz-close" id="quizClose" aria-label="Chiudi quiz">X</button>
         <div class="quiz-header">
           <span class="quiz-icon">${quiz.icon}</span>
-          <div>
+          <div class="quiz-title">
             <p class="eyebrow">Checkpoint teoria</p>
             <h2>${quiz.title}</h2>
           </div>
@@ -1184,33 +1431,135 @@ function saveProgress() {
 function updateObjectives() {
   const doneIcon = "\u2705";
   const todoIcon = "\u2B1C";
-  const trophyIcon = "\uD83C\uDFC6";
-  const brainIcon = "\uD83E\uDDE0";
-  const linkIcon = "\uD83D\uDD17";
-  const boltIcon = "\u26A1";
 
   const objectives = [
-    { id: "o1", text: "1) Completa livelli 1-3", done: () => [1, 2, 3].every(n => state.completedLevels.has(n)) },
-    { id: "o2", text: "2) Completa livelli 4-7", done: () => [4, 5, 6, 7].every(n => state.completedLevels.has(n)) },
-    { id: "o3", text: "3) Completa livelli 8-10", done: () => [8, 9, 10].every(n => state.completedLevels.has(n)), doneIcon: trophyIcon },
-    { id: "o4", text: "4) Metti 10+ dispositivi in mappa", done: () => state.nodes.length >= 10, unlock: m => m.o1 },
-    { id: "o5", text: "5) Crea 12+ collegamenti", done: () => state.cables.length >= 12, unlock: m => m.o4, doneIcon: linkIcon },
-    { id: "o6", text: "6) Completa un livello veloce (<60s)", done: () => state.fastCompletes >= 1, unlock: m => m.o5, doneIcon: boltIcon },
-    { id: "o7", text: "7) Chiudi una mappa con 2 server", done: () => state.nodes.filter(n => n.type === "server").length >= 2, unlock: m => m.o6, doneIcon: brainIcon },
+    { id: "o1", text: "1) Completa livelli 1-3", xp: 35, done: () => [1, 2, 3].every(n => state.completedLevels.has(n)) },
+    { id: "o2", text: "2) Completa livelli 4-7", xp: 65, done: () => [4, 5, 6, 7].every(n => state.completedLevels.has(n)) },
+    { id: "o3", text: "3) Completa livelli 8-10", xp: 100, done: () => [8, 9, 10].every(n => state.completedLevels.has(n)) },
+    { id: "o4", text: "4) Metti 10+ dispositivi in mappa", xp: 25, done: () => state.nodes.length >= 10, unlock: m => m.o1 },
+    { id: "o5", text: "5) Crea 12+ collegamenti", xp: 45, done: () => state.cables.length >= 12, unlock: m => m.o4 },
+    { id: "o6", text: "6) Completa un livello veloce (<60s)", xp: 55, done: () => state.fastCompletes >= 1, unlock: m => m.o5 },
+    { id: "o7", text: "7) Chiudi una mappa con 2 server", xp: 75, done: () => state.nodes.filter(n => n.type === "server").length >= 2, unlock: m => m.o6 },
   ];
 
   const doneMap = {};
-  objectives.forEach(o => { doneMap[o.id] = !!o.done(); });
+  objectives.forEach(o => { doneMap[o.id] = state.earnedObjectives.has(o.id) || !!o.done(); });
   const visible = objectives.filter(o => !o.unlock || o.unlock(doneMap));
   const doneVisible = visible.filter(o => doneMap[o.id]).length;
+  const justCompleted = new Set();
+  const panelWasOpen = objectivePanel?.classList.contains("show");
+
+  visible.forEach(o => {
+    if (doneMap[o.id] && !state.earnedObjectives.has(o.id)) {
+      state.earnedObjectives.add(o.id);
+      justCompleted.add(o.id);
+      addXP(o.xp, `Obiettivo completato: ${o.text.replace(/^\d+\)\s*/, "")}`);
+      saveProgress();
+    }
+  });
 
   if (objectiveBtn) objectiveBtn.textContent = `Obiettivi ${doneVisible}/${visible.length}`;
   if (!objectivePanel) return;
   objectivePanel.innerHTML = visible.map(o => {
     const done = doneMap[o.id];
-    const icon = done ? (o.doneIcon || doneIcon) : todoIcon;
-    return `<div class="objective-item${done ? " done" : ""}">${icon} ${o.text}</div>`;
+    const icon = done ? doneIcon : todoIcon;
+    const classes = [
+      "objective-item",
+      done ? "done" : "",
+      justCompleted.has(o.id) ? "just-completed" : "",
+    ].filter(Boolean).join(" ");
+    return `<div class="${classes}"><span class="objective-icon">${icon}</span><span class="objective-copy">${o.text}</span><span class="objective-xp">+${o.xp} XP</span></div>`;
   }).join("");
+
+  if (justCompleted.size) {
+    objectivePanel.classList.add("show");
+    objectivePanel.setAttribute("aria-hidden", "false");
+    objectiveBtn?.classList.add("objective-flash");
+    window.setTimeout(() => {
+      objectiveBtn?.classList.remove("objective-flash");
+      objectivePanel.querySelectorAll(".just-completed").forEach(el => el.classList.remove("just-completed"));
+      if (!panelWasOpen) {
+        objectivePanel.classList.remove("show");
+        objectivePanel.setAttribute("aria-hidden", "true");
+      }
+    }, 2800);
+  }
+}
+
+function pickIncident(levelNum) {
+  if (Math.random() > 0.78) return null;
+  const available = LEVELS[levelNum]?.available || Object.keys(DEVICE_META);
+  const candidates = available.filter(type => type !== state.lastIncidentTarget);
+  const type = candidates[Math.floor(Math.random() * candidates.length)] || available[0] || "rete";
+  const incident = INCIDENTS[Math.floor(Math.random() * INCIDENTS.length)];
+  state.lastIncidentTarget = type;
+  return {
+    tag: incident.tag,
+    target: type,
+    text: incident.text(DEVICE_META[type]?.label || type),
+  };
+}
+
+function renderEngagementPanel() {
+  const meta = LEVEL_GAMEPLAY[state.level] || {};
+  const challenge = meta.challenge;
+  const incident = state.activeIncident;
+
+  updateGameplayHud();
+  if (eventChip && eventText) {
+    eventChip.hidden = !incident;
+    eventText.textContent = incident ? `${incident.tag}: ${incident.target}` : "-";
+    eventChip.title = incident ? incident.text : "";
+  }
+  if (challengeList && challenge) {
+    challengeList.innerHTML = `
+      <div class="challenge-item"><span>Tempo</span><strong>${challenge.time} sec</strong></div>
+      <div class="challenge-item"><span>Cavi</span><strong>${challenge.cables} max</strong></div>
+      <div class="challenge-item"><span>Precisione</span><strong>0 errori</strong></div>
+      <div class="challenge-reward">Bonus completo: +${challenge.xp} XP + combo</div>
+    `;
+  }
+}
+
+function formatRunTime(seconds) {
+  return `${Math.max(0, Math.ceil(seconds))} sec`;
+}
+
+function getElapsedSeconds() {
+  if (!state.timerStarted || !state.levelStartTime) return 0;
+  return (Date.now() - state.levelStartTime) / 1000;
+}
+
+function updateGameplayHud() {
+  const challenge = LEVEL_GAMEPLAY[state.level]?.challenge;
+  const elapsed = getElapsedSeconds();
+  const remaining = challenge ? Math.max(0, challenge.time - elapsed) : 0;
+  const expired = !!challenge && remaining <= 0;
+  const urgent = !!challenge && remaining > 0 && remaining <= 10;
+  if (runTimer) {
+    runTimer.textContent = expired ? "Tempo scaduto" : (challenge ? formatRunTime(remaining) : "0 sec");
+    runTimer.classList.toggle("is-danger", urgent);
+    runTimer.classList.toggle("is-expired", expired);
+  }
+  if (timeBar) {
+    const pct = challenge ? Math.max(0, Math.min(100, (remaining / challenge.time) * 100)) : 0;
+    timeBar.style.width = `${pct}%`;
+    timeBar.classList.toggle("is-hot", urgent);
+    timeBar.classList.toggle("is-expired", expired);
+  }
+  if (cableBudget) {
+    const max = challenge?.cables || 0;
+    cableBudget.textContent = max ? `${state.cables.length}/${max}` : `${state.cables.length}`;
+    cableBudget.classList.toggle("is-over", !!max && state.cables.length > max);
+  }
+}
+
+function startLevelTimer() {
+  if (state.timerStarted) return;
+  state.timerStarted = true;
+  state.levelStartTime = Date.now();
+  state.timerHandle = setInterval(updateGameplayHud, 500);
+  updateGameplayHud();
 }
 
 if (objectiveBtn && objectivePanel) {
@@ -1254,7 +1603,11 @@ function _doLoadLevel(n) {
   state.nodes = [];
   state.cables = [];
   state.selectedNode = null;
-  state.levelStartTime = Date.now();
+  state.levelStartTime = null;
+  state.timerStarted = false;
+  clearInterval(state.timerHandle);
+  state.levelErrors = 0;
+  state.activeIncident = pickIncident(n);
 
   // Ripristina eventuale stato salvato
   restoreLevelState(n);
@@ -1262,13 +1615,15 @@ function _doLoadLevel(n) {
   const lv = LEVELS[n];
   statLevel.textContent = n;
   levelTitle.textContent = lv ? lv.title : `Livello ${n}`;
-  objectiveText.textContent = lv ? lv.objective : "";
+  objectiveText.textContent = lv ? `${LEVEL_GAMEPLAY[n]?.ticket || ""}\n\n${lv.objective}` : "";
+  renderEngagementPanel();
 
   renderChecklist();
   renderPalette();
   render();
   liveUpdateChecklist();
   updateTabs();
+  if (state.activeIncident) log(`${state.activeIncident.tag}: ${state.activeIncident.text}`, "warn");
   log(`▶ Livello ${n} — ${lv ? lv.title : ""} caricato`, "");
 }
 
@@ -1350,6 +1705,7 @@ function placeDevice(type, x, y) {
   const lv = LEVELS[state.level];
   const available = lv ? lv.available : Object.keys(DEVICE_META);
   if (!available.includes(type)) return;
+  startLevelTimer();
   const meta = DEVICE_META[type];
   const id = nodeIdCounter++;
   const typeCount = state.nodes.filter(n => n.type === type).length + 1;
@@ -1359,6 +1715,7 @@ function placeDevice(type, x, y) {
   render();
   liveUpdateChecklist();
   updateObjectives();
+  updateGameplayHud();
 }
 
 function renderPalette() {
@@ -1587,10 +1944,10 @@ const CHECK_CONDITIONS = {
         pcs.filter(p => getNeighbors(p.id).includes(sw.id)).length >= 3
       );
     },
+    () => crossCables().length === 0,
   ],
   // Livello 3 – Topologia ad anello
   3: [
-    () => !state.nodes.some(n => n.type !== "pc"),
     () => nodesByType("pc").length === 6,
     () => nodesByType("pc").every(pc => getNeighbors(pc.id).length === 2),
     () => {
@@ -1602,7 +1959,7 @@ const CHECK_CONDITIONS = {
   ],
   // Livello 4 – Firewall perimetrale
   4: [
-    () => nodesByType("pc").length >= 2 && nodesByType("switch").length >= 1 &&
+    () => nodesByType("pc").length === 2 && nodesByType("switch").length >= 1 &&
           nodesByType("pc").every(pc => getNeighbors(pc.id).some(id => {
             const nd = state.nodes.find(n => n.id === id); return nd && nd.type === "switch";
           })),
@@ -1618,24 +1975,35 @@ const CHECK_CONDITIONS = {
       return rt && inet && getNeighbors(rt.id).includes(inet.id);
     },
     () => {
-      const fw = nodesByType("firewall")[0];
-      if (!fw) return false;
-      return nodesByType("pc").every(pc => !getNeighbors(pc.id).includes(fw.id) ||
-        !getNeighbors(pc.id).some(id => {
-          const nd = state.nodes.find(n => n.id === id);
-          return nd && (nd.type === "router" || nd.type === "internet");
-        })
-      );
+      const forbidden = new Set(["router", "internet"]);
+      const lanNodes = [...nodesByType("pc"), ...nodesByType("switch")];
+      return lanNodes.every(node => getNeighbors(node.id).every(id => {
+        const nd = nodeById(id);
+        return !nd || !forbidden.has(nd.type);
+      }));
     },
   ],
   // Livello 5 – Rete scolastica gerarchica
   5: [
     () => nodesByType("pc").length >= 6,
-    () => nodesByType("switch").length === 4,
-    () => nodesByType("server").length >= 1,
-    () => nodesByType("firewall").length === 1,
-    () => nodesByType("router").length === 1,
-    () => nodesByType("internet").length === 1,
+    () => !!findCampusCore(3, 2) && nodesByType("switch").length === 4,
+    () => {
+      const campus = findCampusCore(3, 2);
+      return !!campus && campus.access.every(sw => neighborsByType(sw, "pc").length >= 2);
+    },
+    () => {
+      const campus = findCampusCore(3, 2);
+      return !!campus && nodesByType("server").some(server => hasLink(campus.core.id, server.id));
+    },
+    () => {
+      const campus = findCampusCore(3, 2);
+      return !!campus && nodesByType("firewall").length === 1 && nodesByType("router").length === 1 &&
+        nodesByType("internet").length === 1 && hasWanChain(campus.core);
+    },
+    () => {
+      const campus = findCampusCore(3, 2);
+      return !!campus && accessHasNoBypass(campus.access);
+    },
   ],
   // Livello 6 – Client-Server LAN
   6: [
@@ -1682,29 +2050,64 @@ const CHECK_CONDITIONS = {
   // Livello 8 – Campus Enterprise
   8: [
     () => nodesByType("pc").length >= 8,
-    () => nodesByType("switch").length === 5,
-    () => nodesByType("server").length >= 2,
-    () => nodesByType("firewall").length === 1,
-    () => nodesByType("router").length === 1,
-    () => nodesByType("internet").length === 1,
+    () => !!findCampusCore(4, 2) && nodesByType("switch").length === 5,
+    () => {
+      const campus = findCampusCore(4, 2);
+      return !!campus && campus.access.every(sw => neighborsByType(sw, "pc").length >= 2);
+    },
+    () => {
+      const campus = findCampusCore(4, 2);
+      return !!campus && nodesByType("server").filter(server => hasLink(campus.core.id, server.id)).length >= 2;
+    },
+    () => {
+      const campus = findCampusCore(4, 2);
+      return !!campus && nodesByType("firewall").length === 1 && nodesByType("router").length === 1 &&
+        nodesByType("internet").length === 1 && hasWanChain(campus.core);
+    },
+    () => {
+      const campus = findCampusCore(4, 2);
+      return !!campus && accessHasNoBypass(campus.access);
+    },
   ],
   // Livello 9 – Pre-final Campus
   9: [
     () => nodesByType("pc").length >= 10,
-    () => nodesByType("switch").length === 6,
-    () => nodesByType("server").length >= 2,
-    () => nodesByType("firewall").length === 1,
-    () => nodesByType("router").length === 1,
-    () => nodesByType("internet").length === 1,
+    () => !!findCampusCore(5, 2) && nodesByType("switch").length === 6,
+    () => {
+      const campus = findCampusCore(5, 2);
+      return !!campus && campus.access.every(sw => neighborsByType(sw, "pc").length >= 2);
+    },
+    () => {
+      const campus = findCampusCore(5, 2);
+      return !!campus && nodesByType("server").filter(server => hasLink(campus.core.id, server.id)).length >= 2;
+    },
+    () => {
+      const campus = findCampusCore(5, 2);
+      return !!campus && nodesByType("firewall").length === 1 && nodesByType("router").length === 1 &&
+        nodesByType("internet").length === 1 && hasWanChain(campus.core);
+    },
+    () => {
+      const campus = findCampusCore(5, 2);
+      return !!campus && accessHasNoBypass(campus.access);
+    },
   ],
   // Livello 10 – Final Boss Campus
   10: [
     () => nodesByType("pc").length >= 12,
-    () => nodesByType("switch").length === 7,
-    () => nodesByType("server").length >= 3,
-    () => nodesByType("firewall").length === 2,
-    () => nodesByType("router").length === 2,
-    () => nodesByType("internet").length === 2,
+    () => !!findCampusCore(6, 2) && nodesByType("switch").length === 7,
+    () => {
+      const campus = findCampusCore(6, 2);
+      return !!campus && nodesByType("server").filter(server => hasLink(campus.core.id, server.id)).length >= 3;
+    },
+    () => nodesByType("firewall").length === 2 && nodesByType("router").length === 2 && nodesByType("internet").length === 2,
+    () => {
+      const campus = findCampusCore(6, 2);
+      return !!campus && wanChainCount(campus.core) >= 2;
+    },
+    () => {
+      const campus = findCampusCore(6, 2);
+      return !!campus && accessHasNoBypass(campus.access);
+    },
   ],
 };
 
@@ -1788,7 +2191,7 @@ function onNodeClick(id) {
 
 function addCable(a, b) {
   const existing = state.cables.findIndex(c => (c.a === a && c.b === b) || (c.a === b && c.b === a));
-  if (existing !== -1) { state.cables.splice(existing, 1); saveCurrentLevelState(); render(); liveUpdateChecklist(); updateObjectives(); return; }
+  if (existing !== -1) { state.cables.splice(existing, 1); saveCurrentLevelState(); render(); liveUpdateChecklist(); updateObjectives(); updateGameplayHud(); return; }
   // Controlla porte disponibili
   const nodeA = state.nodes.find(n => n.id === a);
   const nodeB = state.nodes.find(n => n.id === b);
@@ -1805,6 +2208,7 @@ function addCable(a, b) {
   saveCurrentLevelState();
   liveUpdateChecklist();
   updateObjectives();
+  updateGameplayHud();
 }
 
 function deleteNode(id) {
@@ -1815,6 +2219,7 @@ function deleteNode(id) {
   render();
   liveUpdateChecklist();
   updateObjectives();
+  updateGameplayHud();
 }
 
 /* ─── DRAG ───────────────────────────────────────────────────── */
@@ -1946,6 +2351,14 @@ contextMenu.querySelectorAll("button").forEach(btn => {
 });
 document.addEventListener("click", () => contextMenu.classList.remove("show"));
 
+hintBtn.addEventListener("click", e => {
+  e.stopImmediatePropagation();
+  const lv = LEVELS[state.level];
+  const hint = lv?.hint || "Guarda la checklist: completa un requisito alla volta e poi testa la rete.";
+  showToast("Indizio: " + hint, 5000);
+  log("Indizio: " + hint, "warn");
+}, true);
+
 /* ─── HINT ───────────────────────────────────────────────────── */
 hintBtn.addEventListener("click", () => {
   const lv = LEVELS[state.level];
@@ -1957,7 +2370,10 @@ resetBtn.addEventListener("click", () => {
   state.nodes = [];
   state.cables = [];
   state.selectedNode = null;
-  state.levelStartTime = Date.now();
+  state.levelStartTime = null;
+  state.timerStarted = false;
+  clearInterval(state.timerHandle);
+  state.levelErrors = 0;
   delete state.savedLevels[state.level];
   saveProgress();
   render();
@@ -1965,10 +2381,36 @@ resetBtn.addEventListener("click", () => {
   renderChecklist();
   log("🔄 Rete azzerata");
   updateObjectives();
+  updateGameplayHud();
 });
 
 /* ─── TEST ───────────────────────────────────────────────────── */
 testBtn.addEventListener("click", runTest);
+
+function evaluateLevelChallenges(elapsed) {
+  const meta = LEVEL_GAMEPLAY[state.level] || {};
+  const challenge = meta.challenge;
+  if (!challenge || state.challengeAwards.has(state.level)) return { bonus: 0, lines: [] };
+
+  const passed = [
+    { ok: elapsed <= challenge.time, text: `tempo sotto ${challenge.time}s` },
+    { ok: state.cables.length <= challenge.cables, text: `budget cavi (${state.cables.length}/${challenge.cables})` },
+    { ok: state.levelErrors === 0, text: "nessun test fallito" },
+  ];
+  const lines = passed.map(item => `${item.ok ? "OK" : "NO"} ${item.text}`);
+  if (!passed.every(item => item.ok)) {
+    state.comboStreak = 0;
+    return { bonus: 0, lines };
+  }
+
+  state.comboStreak++;
+  const comboBonus = Math.min(30, state.comboStreak * 5);
+  const bonus = challenge.xp + comboBonus;
+  state.challengeAwards.add(state.level);
+  addXP(bonus, `Sfida bonus livello ${state.level}`);
+  showXpBurst(bonus, `Sfida + combo x${state.comboStreak}`);
+  return { bonus, lines: [...lines, `Combo x${state.comboStreak}: +${comboBonus} XP`] };
+}
 
 function runTest() {
   const lv = LEVELS[state.level];
@@ -1977,6 +2419,7 @@ function runTest() {
   updateChecklist(errs);
 
   if (errs.length > 0) {
+    state.levelErrors++;
     log("❌ Errori rilevati:", "err");
     errs.forEach(e => log("  • " + e, "err"));
     showToast("❌ La rete ha errori — controlla la console", 3000);
@@ -2001,15 +2444,17 @@ function runTest() {
 }
 
 function completeLevel() {
-  const elapsed = (Date.now() - state.levelStartTime) / 1000;
+  const elapsed = getElapsedSeconds();
   if (elapsed < 60) state.fastCompletes++;
 
   const baseXP = LEVELS[state.level]?.difficulty || 20;
   const timeBonus = elapsed < 60 ? 10 : 0;
   const totalXP = baseXP + timeBonus;
+  const challengeResult = evaluateLevelChallenges(elapsed);
 
   state.completedLevels.add(state.level);
   addXP(totalXP, `Livello ${state.level} completato`);
+  showXpBurst(totalXP, `Livello ${state.level} completato`);
   saveProgress();
 
   const nextLevel = state.level + 1;
@@ -2021,8 +2466,13 @@ function completeLevel() {
   const lv = LEVELS[state.level];
   resultIcon.textContent = "🎉";
   resultTitle.textContent = "Rete completata!";
+  const challengeHtml = challengeResult.lines.length
+    ? `<br><br><strong>Sfide bonus</strong><br>${challengeResult.lines.join("<br>")}${challengeResult.bonus ? `<br><strong>+${challengeResult.bonus} XP bonus</strong>` : ""}`
+    : "";
   resultBody.textContent = `${lv?.title || ""} — Ottimo lavoro!`;
   resultInfo.innerHTML = `<strong>${lv?.info || ""}</strong><br><br>⏱ Tempo: ${Math.round(elapsed)}s &nbsp;|&nbsp; +${totalXP} XP${timeBonus ? " (bonus velocità!)" : ""}`;
+
+  resultInfo.innerHTML = `<strong>${lv?.info || ""}</strong><br><br>Tempo: ${Math.round(elapsed)}s &nbsp;|&nbsp; +${totalXP} XP${timeBonus ? " (bonus velocita!)" : ""}${challengeHtml}`;
 
   if (nextLevel <= MAX_LEVEL) {
     resultBtn.textContent = `Livello ${nextLevel} →`;
@@ -2032,6 +2482,7 @@ function completeLevel() {
     resultBtn.onclick = () => { resultModal.close(); loadLevel(1, true); };
   }
   resultModal.showModal();
+  clearInterval(state.timerHandle);
   log(`🏆 Livello ${state.level} superato! +${totalXP} XP`, "ok");
 }
 
@@ -2193,11 +2644,12 @@ const extraCSS = `
   cursor: pointer;
 }
 .quiz-close:hover { border-color: var(--accent); color: var(--accent); }
-.quiz-header { display: flex; align-items: center; gap: 14px; }
+.quiz-header { display: flex; align-items: center; gap: 14px; padding-right: 42px; }
 .quiz-icon { font-size: 34px; }
+.quiz-title { min-width: 0; flex: 1; }
 .quiz-header h2 { margin: 4px 0 0; font-size: 18px; letter-spacing: -.01em; }
 .quiz-progress {
-  margin-left: auto; font-weight: 900; font-size: 13px;
+  flex-shrink: 0; margin-left: auto; font-weight: 900; font-size: 13px;
   background: #eef8f4; color: var(--accent);
   border: 1px solid #bde7d8; border-radius: 999px; padding: 4px 12px;
 }
@@ -2832,6 +3284,7 @@ function showFinalCompletion() {
 
 /* ─── INIT ───────────────────────────────────────────────────── */
 // Sblocca i livelli già completati al caricamento
+initConsoleResize();
 state.completedLevels.forEach(n => {
   state.unlockedLevels.add(n);
   if (n + 1 <= MAX_LEVEL) state.unlockedLevels.add(n + 1);
