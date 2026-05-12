@@ -1167,13 +1167,13 @@ body.is-resizing-console {
 }
 
 html.dark {
-  --paper:          #0d1514;
-  --surface:        #111b19;
-  --surface-strong: #162220;
+  --paper:          #111315;
+  --surface:        #181a1d;
+  --surface-strong: #202326;
   --ink:            #dceae6;
   --muted:          #7a9e96;
-  --line:           #243330;
-  --line-strong:    #2e4340;
+  --line:           #303438;
+  --line-strong:    #3c4246;
   --accent:         #2dd4bf;
   --accent-2:       #60a5fa;
   --success:        #34d399;
@@ -1189,7 +1189,7 @@ html.dark body {
 }
 
 html.dark .topbar {
-  background: rgba(13,21,20,.92);
+  background: rgba(17,19,21,.92);
   border-color: var(--line);
 }
 
@@ -1235,7 +1235,7 @@ html.dark .board-wrap {
   background: var(--paper);
 }
 
-html.dark svg#board rect {
+html.dark svg#board > rect {
   fill: var(--paper);
 }
 
@@ -1271,7 +1271,7 @@ html.dark .btn.secondary:hover {
 
 html.dark .btn.primary {
   background: var(--accent);
-  color: #0d1514;
+  color: #111315;
 }
 
 html.dark .level-tab {
@@ -1280,9 +1280,11 @@ html.dark .level-tab {
   color: var(--muted);
 }
 
-html.dark .level-tab.active {
+html.dark .level-tab.active,
+html.dark .level-tab.is-active,
+html.dark .level-tab:hover {
   background: var(--accent);
-  color: #0d1514;
+  color: #111315;
   border-color: var(--accent);
 }
 
@@ -1366,6 +1368,91 @@ html.dark .event-chip {
   color: var(--ink);
 }
 
+html.dark .objective-item.done .objective-xp,
+html.dark .level-tab.is-complete,
+html.dark .cable-tool.is-active,
+html.dark .challenge-reward {
+  background: rgba(45,212,191,.12);
+  color: var(--accent);
+}
+
+html.dark .stat,
+html.dark .device-card,
+html.dark .quick-help,
+html.dark .run-hud > *,
+html.dark .challenge-item,
+html.dark .log-entry,
+html.dark .node-badge {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+html.dark .device-icon,
+html.dark .node-face {
+  background: rgba(45,212,191,.10);
+  fill: rgba(45,212,191,.10);
+}
+
+html.dark .node-shell {
+  fill: #24272a;
+  stroke: var(--line-strong);
+}
+
+html.dark .node-icon-fill {
+  fill: rgba(45,212,191,.16);
+}
+
+html.dark .node-label,
+html.dark .packet-label {
+  fill: var(--ink);
+}
+
+html.dark .node-sub {
+  fill: var(--muted);
+}
+
+html.dark .node-badge,
+html.dark .time-bar {
+  fill: #2a2d31;
+  background: #2a2d31;
+  stroke: var(--line);
+}
+
+html.dark .node-badge-text,
+html.dark .event-chip strong {
+  fill: #fbbf24;
+  color: #fbbf24;
+}
+
+html.dark .packet {
+  stroke: var(--paper);
+}
+
+html.dark .xp-burst {
+  background: rgba(52,211,153,.14);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+html.dark .log-entry.ok {
+  background: rgba(52,211,153,.12);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+html.dark .log-entry.warn {
+  background: rgba(251,191,36,.12);
+  color: #fbbf24;
+  border-color: #fbbf24;
+}
+
+html.dark .log-entry.err {
+  background: rgba(248,113,113,.12);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
 /* smooth transitions on game elements */
 body, .topbar, .toolbox, .mission-panel, .mission-card,
 .console-panel, .workspace-toolbar, .board-wrap,
@@ -1400,16 +1487,26 @@ body, .topbar, .toolbox, .mission-panel, .mission-card,
   box-shadow: 0 0 0 4px rgba(45,212,191,.15);
 }
 html.dark .theme-toggle {
-  background: rgba(13,21,20,.9);
+  background: rgba(25,27,30,.94);
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(45,212,191,.2);
 }
 
 /* icon flip animation */
 .theme-toggle .t-icon {
-  display: block;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
   transition: transform 0.5s cubic-bezier(.34,1.56,.64,1), opacity 0.3s ease;
   transform-origin: center;
+}
+
+.theme-icon-svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  stroke: currentColor;
 }
 .theme-toggle.spinning .t-icon {
   animation: iconSpin 0.5s cubic-bezier(.34,1.56,.64,1);

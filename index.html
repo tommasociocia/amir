@@ -67,7 +67,7 @@
 
       <section style="display:flex;justify-content:center;padding:10px 0 4px">
         <button class="theme-toggle" id="gameThemeToggle" type="button" title="Cambia tema chiaro/scuro" aria-label="Cambia tema">
-          <span class="t-icon" id="themeIcon">☀️</span>
+          <span class="t-icon" id="themeIcon"></span>
         </button>
       </section>
     </aside>
@@ -178,8 +178,10 @@
   const btn  = document.getElementById('gameThemeToggle');
   const icon = document.getElementById('themeIcon');
 
-  /* icons */
-  const ICONS = { light: '☀️', dark: '🌙' };
+  const ICONS = {
+    light: '<svg class="theme-icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.25" fill="none" stroke-width="2"/><path d="M12 2.75v2.4M12 18.85v2.4M4.35 4.35l1.7 1.7M17.95 17.95l1.7 1.7M2.75 12h2.4M18.85 12h2.4M4.35 19.65l1.7-1.7M17.95 6.05l1.7-1.7" fill="none" stroke-width="2" stroke-linecap="round"/></svg>',
+    dark: '<svg class="theme-icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.1 14.4A7.4 7.4 0 0 1 9.6 3.9 8.2 8.2 0 1 0 20.1 14.4Z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
 
   function getInitialTheme(){
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -191,7 +193,7 @@
     const isDark = theme === 'dark';
     document.documentElement.classList.toggle('dark', isDark);
     /* show the icon representing current mode (sun = you're in dark, moon = you're in light) */
-    icon.textContent = isDark ? ICONS.light : ICONS.dark;
+    icon.innerHTML = isDark ? ICONS.light : ICONS.dark;
     btn.setAttribute('title', isDark ? 'Passa al tema chiaro' : 'Passa al tema scuro');
 
     if(animate){
@@ -218,7 +220,7 @@
         left:${cx}px;top:${cy}px;
         width:0;height:0;
         border-radius:50%;
-        background:${isDark ? 'rgba(13,21,20,.92)' : 'rgba(251,247,239,.92)'};
+        background:${isDark ? 'rgba(17,19,21,.94)' : 'rgba(251,247,239,.92)'};
         transform:translate(-50%,-50%);
         transition:width 0.58s cubic-bezier(.4,0,.2,1),
                    height 0.58s cubic-bezier(.4,0,.2,1),

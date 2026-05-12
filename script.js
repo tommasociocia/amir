@@ -3018,6 +3018,73 @@ const extraCSS = `
 .level-tab.is-locked::before { content: "🔒"; font-size: 10px; margin-right: 3px; }
 
 /* ─── Animations ─── */
+html.dark .quiz-overlay,
+html.dark .theory-overlay {
+  background: rgba(0,0,0,.62);
+}
+html.dark .quiz-modal,
+html.dark .theory-modal,
+html.dark .match-modal,
+html.dark .timeline-modal,
+html.dark .osi-game-modal,
+html.dark .badge-popup,
+html.dark .final-recap,
+html.dark .final-stat,
+html.dark .splash-feat {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .quiz-progress,
+html.dark .quiz-opt:hover:not(:disabled),
+html.dark .match-card:hover:not(.matched):not(.wrong-flash),
+html.dark .tl-item:hover,
+html.dark .osi-slot-num,
+html.dark .osi-slot-drop.drag-over,
+html.dark .final-topic,
+html.dark .splash-mark {
+  background: rgba(45,212,191,.12);
+  border-color: rgba(45,212,191,.28);
+  color: var(--accent);
+}
+html.dark .quiz-opt,
+html.dark .match-card,
+html.dark .tl-item,
+html.dark .osi-items,
+html.dark .osi-item {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .match-card.selected,
+html.dark .tl-item.drag-over-tl {
+  background: rgba(96,165,250,.14);
+  border-color: var(--accent-2);
+}
+html.dark .quiz-opt.correct,
+html.dark .quiz-expl.ok,
+html.dark .match-card.matched,
+html.dark .tl-item.tl-correct,
+html.dark .osi-slot-drop.slot-correct {
+  background: rgba(52,211,153,.14) !important;
+  border-color: var(--success) !important;
+  color: var(--success) !important;
+}
+html.dark .quiz-opt.wrong,
+html.dark .quiz-expl.err,
+html.dark .match-card.wrong-flash,
+html.dark .tl-item.tl-wrong,
+html.dark .osi-slot-drop.slot-wrong {
+  background: rgba(248,113,113,.14) !important;
+  border-color: var(--danger) !important;
+  color: var(--danger) !important;
+}
+html.dark .final-badge {
+  background: rgba(251,191,36,.14);
+  border-color: rgba(251,191,36,.35);
+  color: #fbbf24;
+}
+
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
 `;
