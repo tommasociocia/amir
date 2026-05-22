@@ -357,6 +357,11 @@ const state = {
 /* ─── LEVEL DEFINITIONS ─────────────────────────────────────── */
 const LEVELS = {};
 const MAX_LEVEL = 10;
+const FREE_MODE_ID = "free";
+
+function isFreeMode(level) {
+  return level === FREE_MODE_ID;
+}
 
 const LEVEL_GAMEPLAY = {
   1: { ticket: "Ufficio segreteria: 4 postazioni devono condividere la stessa LAN senza confusione di cavi.", challenge: { time: 60, cables: 4, xp: 12 } },
@@ -842,6 +847,7 @@ function usedPorts(nodeId) {
   return state.cables.filter(c => c.a === nodeId || c.b === nodeId).length;
 }
 function maxPorts(type) {
+  if (isFreeMode(state.level)) return FREE_MODE_PORTS[type] ?? 16;
   if (type === "pc" && state.level === 3) return 2;
   return DEVICE_META[type]?.maxPorts ?? 1;
 }
@@ -854,6 +860,39 @@ const DEVICE_ICONS = {
   firewall: `<svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3 L32 9 L32 20 C32 27 25 32 18 33 C11 32 4 27 4 20 L4 9 Z"/><path d="M18 10 L18 23 M13 15 L23 15"/></svg>`,
   internet: `<svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="13"/><path d="M5 18h26M18 5c-5 4-5 18 0 26M18 5c5 4 5 18 0 26"/><path d="M7 11h22M7 25h22"/></svg>`,
 };
+
+const FREE_MODE_PORTS = {
+  pc: 8,
+  switch: 32,
+  router: 16,
+  server: 8,
+  firewall: 16,
+  internet: 16,
+};
+
+const FREE_MODE = {
+  title: "Crea la tua rete",
+  difficulty: 0,
+  available: Object.keys(DEVICE_META),
+  objective: [
+    "Modalita libera: crea la rete che vuoi, senza quiz, timer o vincoli di livello.",
+    "",
+    "Puoi usare tutti i dispositivi, scegliere i cavi, provare topologie diverse e analizzare i collegamenti quando vuoi.",
+  ].join("\n"),
+  checks: [
+    "Tutti i dispositivi disponibili",
+    "Nessun limite di tempo o numero di cavi",
+    "Analisi libera senza completamento livello",
+  ],
+  hint: "Sperimenta: prova una LAN semplice, poi aggiungi router, firewall, server e Internet per vedere come cambia il percorso.",
+  info: "Modalita libera: questa rete non blocca ne sblocca livelli, serve per progettare e sperimentare.",
+  validate: () => [],
+  pairs: () => [],
+};
+
+function getLevelConfig(level = state.level) {
+  return isFreeMode(level) ? FREE_MODE : LEVELS[level];
+}
 
 /* ─── DOM REFS ──────────────────────────────────────────────── */
 const $ = id => document.getElementById(id);
@@ -1372,6 +1411,11 @@ function showTimelineGame(onComplete) {
 
 /* ─── LEVEL LOADING ─────────────────────────────────────────── */
 function loadLevel(n, skipIntro = false) {
+  if (isFreeMode(n)) {
+    _doLoadLevel(FREE_MODE_ID);
+    return;
+  }
+
   const gateQuizLevels = new Set([2, 3, 4, 5, 6, 7, 8, 9, 10]);
   const quizKey = `beforeLevel${n}`;
   if (gateQuizLevels.has(n) && !state.passedGateQuizzes.has(quizKey) && QUIZ_DB[quizKey]) {
@@ -1431,15 +1475,16 @@ function saveProgress() {
 function updateObjectives() {
   const doneIcon = "\u2705";
   const todoIcon = "\u2B1C";
+  const countCurrentBuild = !isFreeMode(state.level);
 
   const objectives = [
     { id: "o1", text: "1) Completa livelli 1-3", xp: 35, done: () => [1, 2, 3].every(n => state.completedLevels.has(n)) },
     { id: "o2", text: "2) Completa livelli 4-7", xp: 65, done: () => [4, 5, 6, 7].every(n => state.completedLevels.has(n)) },
     { id: "o3", text: "3) Completa livelli 8-10", xp: 100, done: () => [8, 9, 10].every(n => state.completedLevels.has(n)) },
-    { id: "o4", text: "4) Metti 10+ dispositivi in mappa", xp: 25, done: () => state.nodes.length >= 10, unlock: m => m.o1 },
-    { id: "o5", text: "5) Crea 12+ collegamenti", xp: 45, done: () => state.cables.length >= 12, unlock: m => m.o4 },
+    { id: "o4", text: "4) Metti 10+ dispositivi in mappa", xp: 25, done: () => countCurrentBuild && state.nodes.length >= 10, unlock: m => m.o1 },
+    { id: "o5", text: "5) Crea 12+ collegamenti", xp: 45, done: () => countCurrentBuild && state.cables.length >= 12, unlock: m => m.o4 },
     { id: "o6", text: "6) Completa un livello veloce (<60s)", xp: 55, done: () => state.fastCompletes >= 1, unlock: m => m.o5 },
-    { id: "o7", text: "7) Chiudi una mappa con 2 server", xp: 75, done: () => state.nodes.filter(n => n.type === "server").length >= 2, unlock: m => m.o6 },
+    { id: "o7", text: "7) Chiudi una mappa con 2 server", xp: 75, done: () => countCurrentBuild && state.nodes.filter(n => n.type === "server").length >= 2, unlock: m => m.o6 },
   ];
 
   const doneMap = {};
@@ -1518,6 +1563,13 @@ function renderEngagementPanel() {
       <div class="challenge-item"><span>Precisione</span><strong>0 errori</strong></div>
       <div class="challenge-reward">Bonus completo: +${challenge.xp} XP + combo</div>
     `;
+  } else if (challengeList) {
+    challengeList.innerHTML = `
+      <div class="challenge-free">
+        <strong>Free mode</strong>
+        <span>Nessun timer, nessun budget cavi, nessun blocco: costruisci e analizza liberamente.</span>
+      </div>
+    `;
   }
 }
 
@@ -1531,6 +1583,23 @@ function getElapsedSeconds() {
 }
 
 function updateGameplayHud() {
+  if (isFreeMode(state.level)) {
+    if (runTimer) {
+      runTimer.textContent = "Free";
+      runTimer.classList.remove("is-danger", "is-expired");
+    }
+    if (timeBar) {
+      timeBar.style.width = "100%";
+      timeBar.classList.remove("is-hot", "is-expired");
+      timeBar.classList.add("is-free");
+    }
+    if (cableBudget) {
+      cableBudget.textContent = `${state.cables.length}`;
+      cableBudget.classList.remove("is-over");
+    }
+    return;
+  }
+
   const challenge = LEVEL_GAMEPLAY[state.level]?.challenge;
   const elapsed = getElapsedSeconds();
   const remaining = challenge ? Math.max(0, challenge.time - elapsed) : 0;
@@ -1544,6 +1613,7 @@ function updateGameplayHud() {
   if (timeBar) {
     const pct = challenge ? Math.max(0, Math.min(100, (remaining / challenge.time) * 100)) : 0;
     timeBar.style.width = `${pct}%`;
+    timeBar.classList.remove("is-free");
     timeBar.classList.toggle("is-hot", urgent);
     timeBar.classList.toggle("is-expired", expired);
   }
@@ -1555,6 +1625,7 @@ function updateGameplayHud() {
 }
 
 function startLevelTimer() {
+  if (isFreeMode(state.level)) return;
   if (state.timerStarted) return;
   state.timerStarted = true;
   state.levelStartTime = Date.now();
@@ -1607,15 +1678,16 @@ function _doLoadLevel(n) {
   state.timerStarted = false;
   clearInterval(state.timerHandle);
   state.levelErrors = 0;
-  state.activeIncident = pickIncident(n);
+  state.activeIncident = isFreeMode(n) ? null : pickIncident(n);
 
   // Ripristina eventuale stato salvato
   restoreLevelState(n);
 
-  const lv = LEVELS[n];
-  statLevel.textContent = n;
+  const lv = getLevelConfig(n);
+  statLevel.textContent = isFreeMode(n) ? "Free" : n;
   levelTitle.textContent = lv ? lv.title : `Livello ${n}`;
-  objectiveText.textContent = lv ? `${LEVEL_GAMEPLAY[n]?.ticket || ""}\n\n${lv.objective}` : "";
+  objectiveText.textContent = lv ? `${LEVEL_GAMEPLAY[n]?.ticket || ""}${LEVEL_GAMEPLAY[n]?.ticket ? "\n\n" : ""}${lv.objective}` : "";
+  if (testBtn) testBtn.textContent = isFreeMode(n) ? "🧪 Analizza rete" : "🚀 Testa rete";
   renderEngagementPanel();
 
   renderChecklist();
@@ -1624,7 +1696,7 @@ function _doLoadLevel(n) {
   liveUpdateChecklist();
   updateTabs();
   if (state.activeIncident) log(`${state.activeIncident.tag}: ${state.activeIncident.text}`, "warn");
-  log(`▶ Livello ${n} — ${lv ? lv.title : ""} caricato`, "");
+  log(isFreeMode(n) ? `▶ ${lv.title} — free mode caricata` : `▶ Livello ${n} — ${lv ? lv.title : ""} caricato`, "");
 }
 
 /* ─── TABS ───────────────────────────────────────────────────── */
@@ -1651,6 +1723,14 @@ function updateTabs() {
     });
     levelTabs.appendChild(btn);
   });
+  const freeBtn = document.createElement("button");
+  freeBtn.className = "level-tab free-mode-tab";
+  freeBtn.textContent = "Crea la tua rete";
+  freeBtn.title = "Crea la tua rete — free mode";
+  freeBtn.setAttribute("aria-label", "Crea la tua rete, modalita libera");
+  if (isFreeMode(state.level)) freeBtn.classList.add("is-active");
+  freeBtn.addEventListener("click", () => loadLevel(FREE_MODE_ID, true));
+  levelTabs.appendChild(freeBtn);
   updateObjectives();
 }
 
@@ -1702,7 +1782,7 @@ function getSmartPlacement(type) {
 }
 
 function placeDevice(type, x, y) {
-  const lv = LEVELS[state.level];
+  const lv = getLevelConfig();
   const available = lv ? lv.available : Object.keys(DEVICE_META);
   if (!available.includes(type)) return;
   startLevelTimer();
@@ -1710,7 +1790,7 @@ function placeDevice(type, x, y) {
   const id = nodeIdCounter++;
   const typeCount = state.nodes.filter(n => n.type === type).length + 1;
   state.nodes.push({ id, type, x, y, label: `${meta.label}${typeCount}` });
-  addXP(2, `Piazzato ${meta.label}`);
+  if (!isFreeMode(state.level)) addXP(2, `Piazzato ${meta.label}`);
   saveCurrentLevelState();
   render();
   liveUpdateChecklist();
@@ -1720,7 +1800,7 @@ function placeDevice(type, x, y) {
 
 function renderPalette() {
   devicePalette.innerHTML = "";
-  const lv = LEVELS[state.level];
+  const lv = getLevelConfig();
   const available = lv ? lv.available : Object.keys(DEVICE_META);
   Object.keys(DEVICE_META).forEach(type => {
     const meta = DEVICE_META[type];
@@ -1897,7 +1977,7 @@ function render() {
 /* ─── CHECKLIST ──────────────────────────────────────────────── */
 function renderChecklist() {
   checklist.innerHTML = "";
-  const lv = LEVELS[state.level];
+  const lv = getLevelConfig();
   if (!lv) return;
   lv.checks.forEach(txt => {
     const div = document.createElement("div");
@@ -2112,10 +2192,15 @@ const CHECK_CONDITIONS = {
 };
 
 function liveUpdateChecklist() {
-  const lv = LEVELS[state.level];
+  const lv = getLevelConfig();
   if (!lv) return;
   const items = checklist.querySelectorAll(".check");
   if (!items.length) return;
+
+  if (isFreeMode(state.level)) {
+    items.forEach(item => { item.className = "check ok"; });
+    return;
+  }
 
   const conditions = CHECK_CONDITIONS[state.level];
 
@@ -2204,7 +2289,7 @@ function addCable(a, b) {
     state.selectedNode = null; render(); return;
   }
   state.cables.push({ a, b, type: state.cableType });
-  addXP(1, "Cavo aggiunto");
+  if (!isFreeMode(state.level)) addXP(1, "Cavo aggiunto");
   saveCurrentLevelState();
   liveUpdateChecklist();
   updateObjectives();
@@ -2353,7 +2438,7 @@ document.addEventListener("click", () => contextMenu.classList.remove("show"));
 
 hintBtn.addEventListener("click", e => {
   e.stopImmediatePropagation();
-  const lv = LEVELS[state.level];
+  const lv = getLevelConfig();
   const hint = lv?.hint || "Guarda la checklist: completa un requisito alla volta e poi testa la rete.";
   showToast("Indizio: " + hint, 5000);
   log("Indizio: " + hint, "warn");
@@ -2361,7 +2446,7 @@ hintBtn.addEventListener("click", e => {
 
 /* ─── HINT ───────────────────────────────────────────────────── */
 hintBtn.addEventListener("click", () => {
-  const lv = LEVELS[state.level];
+  const lv = getLevelConfig();
   if (lv) showToast("💡 " + lv.hint, 5000);
 });
 
@@ -2412,8 +2497,78 @@ function evaluateLevelChallenges(elapsed) {
   return { bonus, lines: [...lines, `Combo x${state.comboStreak}: +${comboBonus} XP`] };
 }
 
+function runFreeModeTest() {
+  updateChecklist([]);
+
+  if (!state.nodes.length) {
+    log("🧪 Free mode: aggiungi qualche dispositivo per analizzare la rete.", "warn");
+    showToast("Aggiungi dispositivi per analizzare la rete", 2400);
+    return;
+  }
+
+  const counts = Object.keys(DEVICE_META)
+    .map(type => {
+      const count = nodesByType(type).length;
+      return count ? `${DEVICE_META[type].label}: ${count}` : null;
+    })
+    .filter(Boolean);
+
+  const unseen = new Set(state.nodes.map(n => n.id));
+  const components = [];
+  while (unseen.size) {
+    const first = unseen.values().next().value;
+    const reachable = bfsReachable(first);
+    components.push(reachable);
+    reachable.forEach(id => unseen.delete(id));
+  }
+
+  let packetPair = null;
+  for (let i = 0; i < state.nodes.length && !packetPair; i++) {
+    for (let j = i + 1; j < state.nodes.length; j++) {
+      const path = bfsPath(state.nodes[i].id, state.nodes[j].id);
+      if (path && path.length > 1) {
+        packetPair = [state.nodes[i].id, state.nodes[j].id];
+        break;
+      }
+    }
+  }
+
+  const showFreeResult = () => {
+    const componentText = components.length === 1
+      ? "Tutti i nodi appartengono alla stessa rete collegata."
+      : `La mappa contiene ${components.length} reti/isole separate.`;
+    resultIcon.textContent = "🧪";
+    resultTitle.textContent = "Analisi free mode";
+    resultBody.textContent = "Questa modalita non completa livelli: serve per sperimentare liberamente.";
+    resultInfo.innerHTML = `
+      <strong>${FREE_MODE.info}</strong><br><br>
+      Nodi: ${state.nodes.length} &nbsp;|&nbsp; Cavi: ${state.cables.length}<br>
+      ${counts.join(" · ") || "Nessun dispositivo conteggiato"}<br><br>
+      ${componentText}
+    `;
+    resultBtn.textContent = "Continua a costruire";
+    resultBtn.onclick = () => resultModal.close();
+    resultModal.showModal();
+    showToast("Analisi free mode completata", 2200);
+  };
+
+  log(`🧪 Free mode: ${state.nodes.length} nodi, ${state.cables.length} cavi, ${components.length} isole/reti.`, "ok");
+  if (packetPair) {
+    log("📦 Invio un pacchetto demo tra due nodi collegati...", "ok");
+    simulatePacket(packetPair[0], packetPair[1], showFreeResult);
+  } else {
+    log("Nessun percorso cablato da simulare: collega almeno due dispositivi.", "warn");
+    showFreeResult();
+  }
+}
+
 function runTest() {
-  const lv = LEVELS[state.level];
+  if (isFreeMode(state.level)) {
+    runFreeModeTest();
+    return;
+  }
+
+  const lv = getLevelConfig();
   if (!lv) return;
   const errs = lv.validate();
   updateChecklist(errs);
@@ -2444,6 +2599,11 @@ function runTest() {
 }
 
 function completeLevel() {
+  if (isFreeMode(state.level)) {
+    runFreeModeTest();
+    return;
+  }
+
   const elapsed = getElapsedSeconds();
   if (elapsed < 60) state.fastCompletes++;
 
@@ -2862,6 +3022,9 @@ const extraCSS = `
   background: var(--surface-strong);
   font-size: 13px; font-weight: 600; color: var(--ink);
 }
+.splash-actions {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+}
 .splash-btn {
   display: flex; align-items: center; gap: 10px;
   padding: 14px 28px; margin-top: 6px;
@@ -2872,6 +3035,14 @@ const extraCSS = `
   box-shadow: 0 12px 32px rgba(15,118,110,.28);
 }
 .splash-btn:hover { transform: translateY(-2px); box-shadow: 0 18px 40px rgba(15,118,110,.36); }
+.splash-btn.secondary {
+  background: var(--surface-strong); color: var(--accent);
+  border: 1px solid rgba(15,118,110,.28);
+  box-shadow: none;
+}
+.splash-btn.secondary:hover {
+  background: #ecf8f5; box-shadow: 0 12px 28px rgba(15,118,110,.16);
+}
 .splash-note { margin: 0; color: var(--muted); font-size: 12px; }
 .splash-nodes { position: absolute; inset: 0; pointer-events: none; }
 .splash-node {
@@ -3084,6 +3255,11 @@ html.dark .final-badge {
   border-color: rgba(251,191,36,.35);
   color: #fbbf24;
 }
+html.dark .splash-btn.secondary {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--accent);
+}
 
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
@@ -3108,14 +3284,19 @@ function showSplashScreen(onStart) {
       <p class="splash-sub">Laboratorio TPSIT — Costruisci reti reali</p>
       <div class="splash-features">
         <div class="splash-feat"><span>🏗️</span><span>10 scenari progressivi</span></div>
+        <div class="splash-feat"><span>🧪</span><span>Free mode: crea la tua rete</span></div>
         <div class="splash-feat"><span>📚</span><span>Teoria ISO/OSI & TCP/IP</span></div>
-        <div class="splash-feat"><span>🎯</span><span>Quiz e minigiochi</span></div>
         <div class="splash-feat"><span>📦</span><span>Simulazione pacchetti</span></div>
       </div>
-      <button class="splash-btn" id="splashStart">
-        <span>Inizia il laboratorio</span>
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+      <div class="splash-actions">
+        <button class="splash-btn" id="splashStart">
+          <span>Inizia il laboratorio</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="splash-btn secondary" id="splashFree">
+          <span>Crea la tua rete</span>
+        </button>
+      </div>
       <p class="splash-note">Progresso salvato automaticamente nel browser</p>
     </div>
     <div class="splash-nodes" id="splashNodes"></div>
@@ -3144,7 +3325,12 @@ function showSplashScreen(onStart) {
 
   splash.querySelector("#splashStart").addEventListener("click", () => {
     splash.classList.add("hide");
-    setTimeout(() => { splash.remove(); onStart(); }, 500);
+    setTimeout(() => { splash.remove(); onStart("lab"); }, 500);
+  });
+
+  splash.querySelector("#splashFree").addEventListener("click", () => {
+    splash.classList.add("hide");
+    setTimeout(() => { splash.remove(); onStart(FREE_MODE_ID); }, 500);
   });
 }
 
@@ -3378,7 +3564,12 @@ const _patchedCompleteLevel = function() {
 // Replace completeLevel references via event patching
 testBtn.removeEventListener("click", runTest);
 testBtn.addEventListener("click", function() {
-  const lv = LEVELS[state.level];
+  if (isFreeMode(state.level)) {
+    runFreeModeTest();
+    return;
+  }
+
+  const lv = getLevelConfig();
   if (!lv) return;
   const errs = lv.validate();
   updateChecklist(errs);
@@ -3407,6 +3598,10 @@ testBtn.addEventListener("click", function() {
   sendNext();
 });
 
-showSplashScreen(() => {
+showSplashScreen(mode => {
+  if (mode === FREE_MODE_ID) {
+    loadLevel(FREE_MODE_ID, true);
+    return;
+  }
   loadLevel(1, true);
 });

@@ -1,218 +1,1315 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NetBuilder - Costruisci la rete</title>
-  <script>
-    (function(){
-      var s=localStorage.getItem('nb-theme');
-      if(!s) s=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
-      if(s==='dark') document.documentElement.classList.add('dark');
-    })();
-  </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetBuilder — Costruisci la tua Rete</title>
+<script>
+  (function(){
+    var s=localStorage.getItem('nb-theme');
+    if(!s) s=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+    if(s==='dark') document.documentElement.classList.add('dark');
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<style>
+:root {
+  --sand:       #fbf7ef;
+  --sand-warm:  #f5ede0;
+  --sand-deep:  #ede3d0;
+  --teal:       #0f766e;
+  --teal-light: #14b8a8;
+  --teal-pale:  rgba(15,118,110,.08);
+  --ink:        #1a1f1e;
+  --ink-soft:   #3a4240;
+  --muted:      #7a8a85;
+  --border:     rgba(255,255,255,.72);
+
+  --glass-bg:      rgba(255,255,255,.45);
+  --glass-bg2:     rgba(255,255,255,.28);
+  --glass-blur:    blur(40px) saturate(1.9);
+  --glass-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,.92),
+    inset 0 -1px 0 rgba(0,0,0,.06),
+    0 8px 40px rgba(15,118,110,.12),
+    0 0 0 1px rgba(255,255,255,.6);
+  --glass-shadow-sm:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    inset 0 -1px 0 rgba(0,0,0,.05),
+    0 4px 20px rgba(0,0,0,.07),
+    0 0 0 1px rgba(255,255,255,.55);
+
+  --ff: 'Instrument Serif', serif;
+  --fb: 'Bricolage Grotesque', sans-serif;
+  --ease-expo:   cubic-bezier(.16,1,.3,1);
+  --ease-spring: cubic-bezier(.34,1.56,.64,1);
+  --ease-smooth: cubic-bezier(.4,0,.2,1);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{font-family:var(--fb);background:var(--sand);color:var(--ink);overflow-x:hidden;cursor:none}
+a{text-decoration:none;color:inherit}
+
+/* ─── CUSTOM CURSOR ─── */
+#cur{position:fixed;top:0;left:0;z-index:9999;pointer-events:none;mix-blend-mode:multiply}
+#cur .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);position:absolute;transform:translate(-50%,-50%)}
+#cur .ring{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--teal);position:absolute;transform:translate(-50%,-50%);transition:width .22s var(--ease-expo),height .22s var(--ease-expo),opacity .2s;opacity:.4}
+body.hov #cur .ring{width:52px;height:52px;opacity:.8}
+
+/* ─── LIQUID GLASS BASE ─── */
+.glass{
+  background:var(--glass-bg);
+  -webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
+  box-shadow:var(--glass-shadow);
+  position:relative;overflow:hidden;
+}
+.glass::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:48%;
+  background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,0) 100%);
+  border-radius:inherit;
+  pointer-events:none;
+  z-index:0;
+}
+.glass > *{position:relative;z-index:1}
+
+.glass-sm{
+  background:var(--glass-bg2);
+  -webkit-backdrop-filter:blur(24px) saturate(1.7);
+  backdrop-filter:blur(24px) saturate(1.7);
+  box-shadow:var(--glass-shadow-sm);
+  position:relative;overflow:hidden;
+}
+.glass-sm::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,0) 100%);
+  border-radius:inherit;pointer-events:none;
+}
+.glass-sm > *{position:relative;z-index:1}
+
+/* ─── NAV ─── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(24px,5vw,72px);height:72px;
+  transition:background .4s,border-color .4s;
+  border-bottom:1px solid transparent;
+}
+nav.stuck{
+  background:rgba(251,247,239,.75);
+  -webkit-backdrop-filter:blur(28px) saturate(1.8);
+  backdrop-filter:blur(28px) saturate(1.8);
+  border-color:rgba(0,0,0,.06);
+}
+.nav-logo{
+  width:46px;height:46px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--ff);font-style:italic;font-size:22px;
+  color:var(--ink);flex-shrink:0;
+}
+.nav-pill{
+  display:flex;align-items:center;gap:4px;
+  border-radius:9999px;padding:5px 5px;
+  background:rgba(255,255,255,.5);
+  -webkit-backdrop-filter:blur(28px) saturate(1.8);
+  backdrop-filter:blur(28px) saturate(1.8);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    inset 0 -1px 0 rgba(0,0,0,.05),
+    0 4px 20px rgba(0,0,0,.08),
+    0 0 0 1px rgba(255,255,255,.65);
+  position:relative;overflow:hidden;
+}
+.nav-pill::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,0) 100%);
+  pointer-events:none;
+}
+.nav-links{display:flex;list-style:none;gap:2px}
+.nav-links a{
+  font-family:var(--fb);font-size:13.5px;font-weight:500;color:var(--ink-soft);
+  padding:8px 14px;border-radius:9999px;
+  transition:background .18s,color .18s;
+  white-space:nowrap;
+  position:relative;z-index:1;
+}
+.nav-links a:hover{background:rgba(255,255,255,.6);color:var(--ink)}
+.nav-cta{
+  border-radius:9999px;padding:8px 18px;
+  background:var(--ink);color:white;
+  font-family:var(--fb);font-size:13.5px;font-weight:600;
+  display:inline-flex;align-items:center;gap:6px;
+  white-space:nowrap;position:relative;z-index:1;
+  transition:opacity .2s,transform .2s var(--ease-spring);
+}
+.nav-cta:hover{opacity:.88;transform:translateY(-1px)}
+.nav-spacer{width:46px;height:46px;flex-shrink:0}
+
+/* ─── PAGE BACKGROUND — continuous warm gradient ─── */
+.page-bg{
+  position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 0%,   rgba(15,118,110,.06) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 80% at 85% 100%, rgba(15,118,110,.07) 0%, transparent 55%),
+    radial-gradient(ellipse 100% 60% at 50% 50%, rgba(245,237,224,.95) 0%, transparent 65%),
+    var(--sand);
+}
+
+/* ─── HERO ─── */
+#hero{
+  position:relative;
+  width:100%;min-height:100vh;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+#hero-canvas{
+  position:absolute;inset:0;
+  width:100%!important;height:100%!important;
+  z-index:0;
+}
+.hero-inner{
+  position:relative;z-index:10;
+  display:flex;flex-direction:column;
+  min-height:100vh;
+}
+.hero-body{
+  flex:1;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:100px clamp(20px,5vw,80px) 40px;
+  text-align:center;
+}
+
+/* badge */
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  border-radius:9999px;padding:5px 16px 5px 7px;
+  margin-bottom:32px;
+  font-family:var(--fb);font-size:12px;font-weight:500;
+  color:var(--ink-soft);
+  opacity:0;transform:translateY(12px);
+}
+.badge-pulse{
+  width:20px;height:20px;border-radius:50%;
+  background:rgba(15,118,110,.12);
+  display:flex;align-items:center;justify-content:center;
+}
+.badge-pulse::after{
+  content:'';width:7px;height:7px;border-radius:50%;
+  background:var(--teal);
+  animation:pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+
+/* headline */
+.hero-hl{
+  font-family:var(--ff);font-style:italic;
+  font-size:clamp(54px,7.5vw,96px);
+  font-weight:400;
+  line-height:.9;letter-spacing:-.04em;
+  color:var(--ink);
+  max-width:880px;
+  margin-bottom:24px;
+}
+.hero-hl .accent{color:var(--teal)}
+.hero-hl .word{
+  display:inline-block;margin-right:.2em;
+  opacity:0;filter:blur(12px);transform:translateY(24px);
+  transition:opacity .75s var(--ease-expo), filter .75s var(--ease-expo), transform .75s var(--ease-expo);
+}
+.hero-hl .word.in{opacity:1;filter:blur(0);transform:translateY(0)}
+
+/* sub */
+.hero-sub{
+  font-family:var(--fb);font-size:clamp(14px,1.5vw,17px);font-weight:400;
+  color:var(--muted);line-height:1.7;
+  max-width:520px;margin-bottom:36px;
+  opacity:0;transform:translateY(14px);
+}
+
+/* cta row */
+.hero-ctas{
+  display:flex;align-items:center;gap:20px;
+  opacity:0;transform:translateY(14px);
+}
+.cta-primary{
+  border-radius:9999px;padding:13px 26px;
+  font-family:var(--fb);font-size:15px;font-weight:600;
+  color:white;
+  background:linear-gradient(155deg,#14b8a8 0%,#0f766e 60%,#0a5a53 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.28),
+    inset 0 -2px 0 rgba(0,0,0,.22),
+    0 12px 40px rgba(15,118,110,.38),
+    0 2px 8px rgba(0,0,0,.12);
+  display:inline-flex;align-items:center;gap:8px;
+  transition:transform .22s var(--ease-spring),box-shadow .22s;
+  position:relative;overflow:hidden;
+}
+.cta-primary::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,0) 100%);
+  border-radius:9999px 9999px 0 0;pointer-events:none;
+}
+.cta-primary .shimmer{
+  position:absolute;top:0;left:-120%;width:60%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.2),transparent);
+  transition:left .55s var(--ease-expo);
+}
+.cta-primary:hover{
+  transform:translateY(-2px) scale(1.02);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.28),
+    inset 0 -2px 0 rgba(0,0,0,.22),
+    0 20px 56px rgba(15,118,110,.45),
+    0 4px 14px rgba(0,0,0,.14);
+}
+.cta-primary:hover .shimmer{left:160%}
+.cta-secondary{
+  font-family:var(--fb);font-size:14px;font-weight:500;
+  color:var(--ink-soft);
+  display:inline-flex;align-items:center;gap:6px;
+  transition:color .18s;
+}
+.cta-secondary:hover{color:var(--ink)}
+.cta-secondary svg{transition:transform .2s var(--ease-spring)}
+.cta-secondary:hover svg{transform:scale(1.15)}
+
+/* stat cards */
+.hero-stats{
+  display:flex;gap:14px;margin-top:40px;
+  opacity:0;transform:translateY(14px);
+  flex-wrap:wrap;justify-content:center;
+}
+.stat{
+  width:190px;border-radius:20px;
+  padding:18px 20px;
+  display:flex;flex-direction:column;gap:0;
+}
+.stat svg{width:26px;height:26px;stroke:var(--ink);margin-bottom:10px;flex-shrink:0}
+.stat-num{
+  font-family:var(--ff);font-style:italic;
+  font-size:clamp(28px,3.5vw,38px);line-height:1;
+  letter-spacing:-.04em;color:var(--ink);margin-bottom:5px;
+}
+.stat-lbl{font-family:var(--fb);font-size:11px;font-weight:400;color:var(--muted);line-height:1.4}
+
+/* partners */
+.hero-partners{
+  padding-bottom:36px;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  opacity:0;transform:translateY(12px);
+}
+.partners-chip{
+  border-radius:9999px;padding:5px 14px;
+  font-family:var(--fb);font-size:11px;font-weight:500;color:var(--muted);
+}
+.partners-row{
+  display:flex;align-items:center;gap:clamp(20px,4vw,52px);
+  flex-wrap:wrap;justify-content:center;
+}
+.partner{
+  font-family:var(--ff);font-style:italic;
+  font-size:clamp(20px,2.5vw,30px);
+  color:var(--ink);letter-spacing:-.02em;
+  opacity:.7;transition:opacity .2s;
+}
+.partner:hover{opacity:1}
+
+/* ─── SHARED SECTION WRAPPER ─── */
+.section-block{
+  padding:clamp(72px,9vw,140px) clamp(24px,6vw,96px);
+  position:relative;
+}
+.section-block + .section-block{
+  border-top:1px solid rgba(0,0,0,.04);
+}
+.wrap{max-width:1160px;margin:0 auto}
+
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--fb);font-size:10.5px;font-weight:700;
+  color:var(--teal);letter-spacing:.18em;text-transform:uppercase;
+  margin-bottom:14px;
+}
+.eyebrow::after{content:'';width:24px;height:1px;background:var(--teal)}
+
+.sec-title{
+  font-family:var(--ff);font-style:italic;
+  font-size:clamp(36px,4.5vw,62px);
+  font-weight:400;line-height:.95;letter-spacing:-.04em;
+  color:var(--ink);margin-bottom:16px;
+}
+.sec-title strong{
+  font-family:var(--fb);font-style:normal;
+  font-weight:800;color:var(--teal);
+}
+.sec-body{
+  font-family:var(--fb);font-size:16px;font-weight:400;
+  color:var(--muted);line-height:1.75;max-width:460px;
+}
+
+/* ─── ABOUT ─── */
+.about-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:clamp(40px,6vw,88px);align-items:center;margin-top:56px;
+}
+.board-card{border-radius:28px;padding:28px}
+.board-inner{
+  background:rgba(255,255,255,.5);border-radius:16px;padding:22px;
+  border:1px solid rgba(0,0,0,.05);
+}
+.feats{display:flex;flex-direction:column;gap:26px}
+.feat{display:flex;gap:14px;align-items:flex-start}
+.feat-ic{
+  width:44px;height:44px;flex-shrink:0;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  transition:transform .22s var(--ease-spring);
+}
+.feat:hover .feat-ic{transform:scale(1.12) rotate(-5deg)}
+.feat h4{font-family:var(--fb);font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px;letter-spacing:-.01em}
+.feat p{font-family:var(--fb);font-size:13.5px;color:var(--muted);line-height:1.65}
+
+/* ─── STEPS ─── */
+.steps-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:16px;margin-top:56px;
+}
+.step{
+  border-radius:24px;padding:36px;
+  transition:transform .28s var(--ease-spring),box-shadow .28s;
+  position:relative;
+}
+.step:hover{transform:translateY(-6px)}
+.step-n{
+  font-family:var(--ff);font-style:italic;
+  font-size:54px;line-height:1;
+  color:rgba(15,118,110,.14);
+  letter-spacing:-.05em;margin-bottom:16px;
+  transition:color .28s;
+}
+.step:hover .step-n{color:rgba(15,118,110,.28)}
+.step-tag{
+  display:inline-block;background:rgba(15,118,110,.1);
+  border-radius:6px;padding:2px 9px;
+  font-family:var(--fb);font-size:10px;font-weight:700;
+  color:var(--teal);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;
+}
+.step h3{font-family:var(--fb);font-size:18px;font-weight:700;color:var(--ink);margin-bottom:7px;letter-spacing:-.02em}
+.step p{font-family:var(--fb);font-size:13.5px;color:var(--muted);line-height:1.68}
+
+/* ─── LEVELS ─── */
+.levels-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:14px;margin-top:56px;
+}
+.lv{
+  padding:22px;border-radius:20px;
+  opacity:0;transform:translateY(24px);
+  cursor:pointer;
+  transition:transform .28s var(--ease-spring);
+  will-change:transform;
+}
+.lv:hover{transform:translateY(-5px) scale(1.02)}
+.lv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.lv-num{font-family:var(--fb);font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.1em}
+.lv-bar{width:36px;height:3px;background:rgba(15,118,110,.15);border-radius:100px;overflow:hidden}
+.lv-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--teal-light));transform-origin:left;transform:scaleX(0);transition:transform .9s var(--ease-expo);border-radius:100px}
+.lv.vis .lv-fill{transform:scaleX(var(--w))}
+.lv-title{font-family:var(--fb);font-size:14.5px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:-.01em;line-height:1.25}
+.lv-desc{font-family:var(--fb);font-size:12px;color:var(--muted);line-height:1.58;margin-bottom:10px}
+.lv-chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{
+  font-family:var(--fb);font-size:10.5px;font-weight:500;color:var(--ink-soft);
+  background:rgba(255,255,255,.6);border-radius:6px;padding:2px 8px;
+  border:1px solid rgba(0,0,0,.06);
+}
+.lv-boss{grid-column:span 2}
+
+/* ─── CONCEPTS ─── */
+.concepts-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:16px;margin-top:56px;
+}
+.concept{
+  padding:28px;border-radius:20px;
+  transition:transform .26s var(--ease-spring);
+}
+.concept:hover{transform:translateY(-6px) scale(1.01)}
+.concept-icon{font-size:26px;margin-bottom:12px}
+.concept h4{font-family:var(--fb);font-size:15.5px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:-.02em}
+.concept p{font-family:var(--fb);font-size:13px;color:var(--muted);line-height:1.65}
+
+/* ─── DEMO ─── */
+.demo-card{margin-top:56px;padding:44px;border-radius:28px}
+.pkt-row{
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:40px;flex-wrap:wrap;
+}
+.pkt-node{display:flex;flex-direction:column;align-items:center;gap:8px}
+.pkt-icon{
+  width:62px;height:62px;border-radius:16px;
+  background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.07);
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  transition:background .3s,box-shadow .3s,transform .22s var(--ease-spring);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 2px 10px rgba(0,0,0,.06);
+}
+.pkt-icon.on{
+  background:rgba(15,118,110,.12);
+  border-color:var(--teal-light);
+  box-shadow:0 0 0 2px var(--teal-light),inset 0 1px 0 rgba(255,255,255,.5),0 8px 24px rgba(15,118,110,.2);
+  transform:scale(1.1);
+}
+.pkt-lbl{font-family:var(--fb);font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}
+.pkt-arrow{
+  width:44px;height:2px;background:var(--sand-deep);
+  align-self:center;margin-bottom:22px;
+  position:relative;overflow:hidden;flex-shrink:0;
+}
+.pkt-arrow::after{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,var(--teal-light));
+  animation:flow 2s ease-in-out infinite;
+}
+@keyframes flow{0%{left:-100%}100%{left:100%}}
+.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.demo-item{
+  padding:20px;border-radius:14px;
+  background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.05);
+  transition:background .2s;
+}
+.demo-item:hover{background:rgba(255,255,255,.75)}
+.demo-item h4{font-family:var(--fb);font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.demo-item p{font-family:var(--fb);font-size:12.5px;color:var(--muted);line-height:1.6}
+
+/* ─── CTA ─── */
+.cta-section{
+  text-align:center;
+  padding:clamp(100px,12vw,160px) clamp(24px,6vw,96px);
+  position:relative;
+}
+.cta-section::before{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:700px;height:400px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(15,118,110,.07) 0%,transparent 65%);
+  pointer-events:none;
+}
+.cta-section .sec-title{max-width:600px;margin:0 auto 14px;font-size:clamp(40px,5vw,70px)}
+.cta-section .sec-body{margin:0 auto 44px}
+
+/* ─── FOOTER ─── */
+footer{
+  border-top:1px solid rgba(0,0,0,.06);
+  padding:28px clamp(24px,6vw,96px);
+  text-align:center;
+  font-family:var(--fb);font-size:13px;color:var(--muted);
+  background:rgba(255,255,255,.3);
+  backdrop-filter:blur(20px);
+}
+footer strong{color:var(--ink-soft)}
+
+/* ─── REVEAL ─── */
+.rv{opacity:0;transform:translateY(36px)}
+.rv-l{opacity:0;transform:translateX(-44px)}
+.rv-r{opacity:0;transform:translateX(44px)}
+.rv-s{opacity:0;transform:scale(.92) translateY(20px)}
+
+/* ─── SCROLL HINT ─── */
+.scroll-hint{
+  position:absolute;bottom:64px;left:clamp(24px,5vw,72px);z-index:20;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  opacity:0;
+}
+.scroll-hint span{
+  font-family:var(--fb);font-size:9px;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted);writing-mode:vertical-rl;
+}
+.scroll-line{width:1px;height:44px;background:linear-gradient(to bottom,var(--teal),transparent);animation:sp 2s ease-in-out infinite}
+@keyframes sp{0%{transform:scaleY(0);transform-origin:top;opacity:0}40%{opacity:1}100%{transform:scaleY(1);transform-origin:top;opacity:0}}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:900px){
+  .about-grid,.steps-grid{grid-template-columns:1fr}
+  .levels-grid{grid-template-columns:1fr 1fr}
+  .lv-boss{grid-column:span 2}
+  .concepts-grid{grid-template-columns:1fr 1fr}
+  .nav-pill .nav-links{display:none}
+}
+@media(max-width:560px){
+  .levels-grid,.concepts-grid{grid-template-columns:1fr}
+  .lv-boss{grid-column:span 1}
+  .demo-grid{grid-template-columns:1fr}
+  .hero-stats{gap:10px}
+  .stat{width:calc(50% - 5px)}
+}
+
+/* ─── RIPPLE ─── */
+.rpl{position:absolute;border-radius:50%;background:rgba(255,255,255,.35);transform:scale(0);animation:rplA .55s linear forwards;pointer-events:none;z-index:10}
+@keyframes rplA{to{transform:scale(5);opacity:0}}
+
+/* ─── DARK MODE ─── */
+:root {
+  --theme-transition: background 0.55s cubic-bezier(.4,0,.2,1),
+                      color 0.55s cubic-bezier(.4,0,.2,1),
+                      border-color 0.55s cubic-bezier(.4,0,.2,1),
+                      box-shadow 0.55s cubic-bezier(.4,0,.2,1),
+                      backdrop-filter 0.55s cubic-bezier(.4,0,.2,1);
+}
+
+html.dark {
+  --sand:       #111315;
+  --sand-warm:  #181a1d;
+  --sand-deep:  #202326;
+  --teal:       #2dd4bf;
+  --teal-light: #5eead4;
+  --teal-pale:  rgba(45,212,191,.08);
+  --ink:        #e8f0ee;
+  --ink-soft:   #b0c4be;
+  --muted:      #7a9e96;
+  --border:     rgba(255,255,255,.08);
+
+  --glass-bg:      rgba(25,27,30,.74);
+  --glass-bg2:     rgba(25,27,30,.58);
+  --glass-blur:    blur(40px) saturate(1.6);
+  --glass-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,.07),
+    inset 0 -1px 0 rgba(0,0,0,.35),
+    0 8px 40px rgba(0,0,0,.35),
+    0 0 0 1px rgba(255,255,255,.06);
+  --glass-shadow-sm:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -1px 0 rgba(0,0,0,.28),
+    0 4px 20px rgba(0,0,0,.28),
+    0 0 0 1px rgba(255,255,255,.05);
+}
+
+html.dark body {
+  background: var(--sand);
+  color: var(--ink);
+}
+
+html.dark .page-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 0%,   rgba(45,212,191,.05) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 80% at 85% 100%, rgba(45,212,191,.06) 0%, transparent 55%),
+    radial-gradient(ellipse 100% 60% at 50% 50%, rgba(18,30,28,.95) 0%, transparent 65%),
+    var(--sand);
+}
+
+html.dark nav.stuck {
+  background: rgba(17,19,21,.84);
+  border-color: rgba(255,255,255,.06);
+}
+
+html.dark .nav-pill {
+  background: rgba(28,31,34,.74);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.07),
+    inset 0 -1px 0 rgba(0,0,0,.3),
+    0 4px 20px rgba(0,0,0,.3),
+    0 0 0 1px rgba(255,255,255,.06);
+}
+
+html.dark .nav-pill::before {
+  background: linear-gradient(180deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,0) 100%);
+}
+
+html.dark .nav-links a { color: var(--ink-soft); }
+html.dark .nav-links a:hover { background: rgba(255,255,255,.06); color: var(--ink); }
+
+html.dark .nav-cta {
+  background: var(--teal);
+  color: #111315;
+}
+
+html.dark .chip {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.08);
+  color: var(--ink-soft);
+}
+
+html.dark .board-inner {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.06);
+}
+
+html.dark .demo-item {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.06);
+}
+
+html.dark .demo-item:hover { background: rgba(255,255,255,.08); }
+
+html.dark .step-tag {
+  background: rgba(45,212,191,.12);
+  color: var(--teal);
+}
+
+html.dark .concept-icon { filter: brightness(1.1); }
+
+html.dark #cur { mix-blend-mode: normal; }
+html.dark #cur .dot { background: var(--teal); box-shadow: 0 0 12px rgba(45,212,191,.45); }
+html.dark #cur .ring { border-color: var(--teal); opacity: .75; }
+
+html.dark footer {
+  background: rgba(0,0,0,.3);
+  border-color: rgba(255,255,255,.06);
+}
+
+/* section backgrounds */
+html.dark [style*="background:var(--sand)"] { background: var(--sand) !important; }
+html.dark [style*="background:var(--sand-warm)"] { background: var(--sand-warm) !important; }
+html.dark [style*="background:var(--sand-deep)"] { background: var(--sand-deep) !important; }
+
+/* smooth transition on all key elements */
+body, nav, .nav-pill, .glass, .glass-sm, .chip, .board-inner,
+.demo-item, footer, .page-bg, .nav-cta, .nav-links a, .step-tag {
+  transition: var(--theme-transition);
+}
+
+/* nav-logo dark toggle button style */
+.nav-logo {
+  cursor: pointer;
+  transition: transform 0.45s cubic-bezier(.34,1.56,.64,1),
+              box-shadow 0.45s cubic-bezier(.4,0,.2,1),
+              background 0.55s cubic-bezier(.4,0,.2,1);
+  user-select: none;
+}
+
+.nav-logo:hover {
+  transform: scale(1.1) rotate(-8deg);
+}
+
+/* dark-active state: filled dark circle */
+html.dark .nav-logo.glass-sm {
+  background: rgba(25,27,30,.94) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 0 0 2px var(--teal),
+    0 8px 32px rgba(45,212,191,.25);
+}
+
+.theme-icon-svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
+html.dark .board-inner svg g rect[fill="white"] {
+  fill: #24272a;
+  stroke: #3a4144;
+}
+
+html.dark .board-inner svg g text[fill="#1a1f1e"] {
+  fill: var(--ink);
+}
+
+/* pulse ring animation on toggle */
+@keyframes themeRing {
+  0%   { box-shadow: 0 0 0 0 rgba(45,212,191,.6), inset 0 1px 0 rgba(255,255,255,.08); }
+  60%  { box-shadow: 0 0 0 18px rgba(45,212,191,0), inset 0 1px 0 rgba(255,255,255,.08); }
+  100% { box-shadow: 0 0 0 0 rgba(45,212,191,0), inset 0 1px 0 rgba(255,255,255,.08); }
+}
+@keyframes themeRingLight {
+  0%   { box-shadow: 0 0 0 0 rgba(15,118,110,.5), var(--glass-shadow-sm); }
+  60%  { box-shadow: 0 0 0 18px rgba(15,118,110,0), var(--glass-shadow-sm); }
+  100% { box-shadow: 0 0 0 0 rgba(15,118,110,0), var(--glass-shadow-sm); }
+}
+.nav-logo.theme-pulse-dark  { animation: themeRing 0.7s cubic-bezier(.4,0,.2,1); }
+.nav-logo.theme-pulse-light { animation: themeRingLight 0.7s cubic-bezier(.4,0,.2,1); }
+
+/* ─── DARK MODE SVG board ─── */
+html.dark .board-inner rect[fill="url(#dots)"] ~ * text { fill: var(--ink) !important; }
+</style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark">NB</span>
-      <div>
-        <h1>NetBuilder</h1>
-        <p>Laboratorio TPSIT sulle reti reali</p>
-      </div>
-    </div>
+<div class="page-bg"></div>
 
-    <nav class="level-tabs" id="levelTabs" aria-label="Livelli"></nav>
-    <div class="objective-wrap">
-            <button class="objective-btn" id="objectiveBtn" type="button">Obiettivi</button>
-      <div class="objective-panel" id="objectivePanel" aria-hidden="true"></div>
-    </div>
+<!-- CURSOR -->
+<div id="cur"><div class="ring"></div><div class="dot"></div></div>
 
-    <div class="stats" aria-label="Statistiche">
-      <div class="stat"><span>Livello</span><strong id="statLevel">1</strong></div>
-      <div class="stat"><span>XP</span><strong id="statScore">0</strong></div>
-      <div class="stat"><span>Nodi</span><strong id="statDevices">0</strong></div>
-    </div>
-  </header>
+<!-- ═══ NAV ═══════════════════════════════════════════════════ -->
+<nav id="nav">
+  <div class="nav-logo glass-sm" style="border-radius:50%">n</div>
 
-  <main class="app-shell">
-    <aside class="toolbox">
-      <section>
-        <h2>Dispositivi 🧰</h2>
-        <div class="device-palette" id="devicePalette"></div>
-      </section>
-
-      <section>
-        <h2>Cavi 🔌</h2>
-        <div class="cable-tools">
-          <button class="cable-tool is-active" id="straightCable" type="button" data-cable="straight">
-            <span class="cable-sample straight"></span>
-            Dritto
-          </button>
-          <button class="cable-tool" id="crossCable" type="button" data-cable="cross">
-            <span class="cable-sample cross"></span>
-            Incrociato
-          </button>
-        </div>
-      </section>
-
-      <section class="quick-help">
-        <h2>Comandi ✨</h2>
-        <p>👉 Click su un dispositivo per inserirlo. 🔗 Click su due nodi per collegarli. 🖱️ Trascina un nodo per sistemarlo. 🗑️ Doppio click elimina.</p>
-      </section>
-
-      <section style="display:flex;justify-content:center;padding:10px 0 4px">
-        <button class="theme-toggle" id="gameThemeToggle" type="button" title="Cambia tema chiaro/scuro" aria-label="Cambia tema">
-          <span class="t-icon" id="themeIcon"></span>
-        </button>
-      </section>
-    </aside>
-
-    <section class="workspace">
-      <div class="workspace-toolbar">
-        <div>
-          <p class="eyebrow">Scenario</p>
-          <h2 id="levelTitle"></h2>
-        </div>
-        <div class="run-hud" aria-label="Sfide livello">
-          <div class="time-chip">
-            <span>Tempo</span>
-            <strong id="runTimer">00:00</strong>
-            <div class="time-bar"><span id="timeBar"></span></div>
-          </div>
-          <div class="budget-chip">
-            <span>Cavi</span>
-            <strong id="cableBudget">0/0</strong>
-          </div>
-          <div class="event-chip" id="eventChip" hidden>
-            <span>Evento</span>
-            <strong id="eventText">-</strong>
-          </div>
-        </div>
-        <div class="actions">
-          <button class="btn secondary" id="hintBtn" type="button">💡 Indizio</button>
-          <button class="btn secondary" id="resetBtn" type="button">🔄 Reset</button>
-          <button class="btn primary" id="testBtn" type="button">🚀 Testa rete</button>
-        </div>
-      </div>
-
-      <div class="board-wrap" id="boardWrap">
-        <svg id="board" viewBox="0 0 1100 720" role="img" aria-label="Area di costruzione della rete">
-          <defs>
-            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" class="grid-line"></path>
-            </pattern>
-            <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#263238" flood-opacity="0.18"></feDropShadow>
-            </filter>
-          </defs>
-          <rect width="1100" height="720" fill="url(#grid)"></rect>
-          <g id="cableLayer"></g>
-          <g id="packetLayer"></g>
-          <g id="deviceLayer"></g>
-        </svg>
-      </div>
-
-      <section class="console-panel" id="consolePanel">
-        <div class="console-resizer" id="consoleResizer" aria-hidden="true"></div>
-        <div class="console-header">
-          <p class="eyebrow">Console rete</p>
-        </div>
-        <div class="network-log" id="networkLog"></div>
-      </section>
-    </section>
-
-    <aside class="mission-panel">
-      <section class="mission-card">
-        <p class="eyebrow">Obiettivo</p>
-        <div id="objectiveText"></div>
-      </section>
-
-      <section class="mission-card">
-        <p class="eyebrow">Verifica</p>
-        <div class="checklist" id="checklist"></div>
-      </section>
-
-      <section class="mission-card">
-        <p class="eyebrow">Sfide bonus</p>
-        <div class="challenge-list" id="challengeList"></div>
-      </section>
-
-    </aside>
-  </main>
-
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-  <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true">
-    <button type="button" data-action="move">🖱️ Sposta</button>
-    <button type="button" data-action="delete">🗑️ Elimina</button>
+  <div class="nav-pill">
+    <ul class="nav-links">
+      <li><a href="#about">Il gioco</a></li>
+      <li><a href="#how">Tutorial</a></li>
+      <li><a href="#levels">Livelli</a></li>
+      <li><a href="#concepts">Concetti</a></li>
+    </ul>
+    <a href="gioco.html" class="nav-cta">
+      Gioca ora
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+    </a>
   </div>
 
-  <dialog class="result-modal" id="resultModal">
-    <div class="result-icon" id="resultIcon"></div>
-    <h2 id="resultTitle"></h2>
-    <p id="resultBody"></p>
-    <div class="result-info" id="resultInfo"></div>
-    <button class="btn primary" id="resultBtn" type="button">Continua</button>
-  </dialog>
+  <div class="nav-spacer"></div>
+</nav>
 
-  <script src="level1.js"></script>
-  <script src="level2.js"></script>
-  <script src="level3.js"></script>
-  <script src="level4.js"></script>
-  <script src="level5.js"></script>
-  <script src="level6.js"></script>
-  <script src="level7.js"></script>
-  <script src="level8.js"></script>
-  <script src="level9.js"></script>
-  <script src="level10.js"></script>
-  <script src="script.js"></script>
+<!-- ═══ HERO ═══════════════════════════════════════════════════ -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+
+  <div class="hero-inner">
+    <div class="hero-body">
+
+      <div class="hero-badge glass-sm" id="hBadge" style="border-radius:9999px">
+        <div class="badge-pulse"></div>
+        TPSIT — Sistemi e Reti
+      </div>
+
+      <h1 class="hero-hl" id="hHead">
+        Costruisci la tua
+        <span class="accent">Rete</span>
+        da zero
+      </h1>
+
+      <p class="hero-sub" id="hSub">
+        Un simulatore interattivo per progettare, costruire e testare reti informatiche reali.
+        Trascina dispositivi, stendi cavi, invia pacchetti.
+      </p>
+
+      <div class="hero-ctas" id="hCtas">
+        <a href="gioco.html" class="cta-primary">
+          <span class="shimmer"></span>
+          <span>Gioca ora</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+        </a>
+        <a href="#about" class="cta-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          Scopri di più
+        </a>
+      </div>
+
+      <div class="hero-stats" id="hStats">
+        <div class="stat glass-sm" style="border-radius:20px">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div class="stat-num">10 Livelli</div>
+          <div class="stat-lbl">Scenari progressivi</div>
+        </div>
+        <div class="stat glass-sm" style="border-radius:20px">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          <div class="stat-num">6 Device</div>
+          <div class="stat-lbl">Dispositivi di rete simulati</div>
+        </div>
+        <div class="stat glass-sm" style="border-radius:20px">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <div class="stat-num">100%</div>
+          <div class="stat-lbl">Pratica applicata</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="hero-partners" id="hPartners">
+      <div class="partners-chip glass-sm" style="border-radius:9999px">
+        Concetti reali dell'industria networking
+      </div>
+      <div class="partners-row">
+        <span class="partner">LAN</span>
+        <span class="partner">WAN</span>
+        <span class="partner">OSI</span>
+        <span class="partner">TCP/IP</span>
+        <span class="partner">Routing</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="scroll-hint" id="scrollHint">
+    <div class="scroll-line"></div>
+    <span>scroll</span>
+  </div>
+</section>
+
+<!-- ═══ ABOUT ═══════════════════════════════════════════════════ -->
+<section id="about" class="section-block" style="background:var(--sand)">
+  <div class="wrap">
+    <div class="eyebrow rv">Il gioco</div>
+    <h2 class="sec-title rv">Cos'è <strong>NetBuilder</strong>?</h2>
+    <p class="sec-body rv">Un ambiente di simulazione visuale dove costruire reti informatiche come farebbe un tecnico reale. Niente teoria — solo pratica su una board interattiva.</p>
+
+    <div class="about-grid">
+      <div class="board-card glass rv-l">
+        <div class="board-inner">
+          <svg viewBox="0 0 320 240" width="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <pattern id="dots" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r=".8" fill="rgba(15,118,110,.14)"/>
+            </pattern>
+            <rect width="320" height="240" fill="url(#dots)"/>
+            <line x1="80" y1="70" x2="160" y2="118" stroke="#0f766e" stroke-width="1.8" stroke-dasharray="5,3.5" opacity=".5"/>
+            <line x1="240" y1="70" x2="160" y2="118" stroke="#0f766e" stroke-width="1.8" stroke-dasharray="5,3.5" opacity=".5"/>
+            <line x1="80" y1="174" x2="160" y2="118" stroke="#0f766e" stroke-width="1.8" stroke-dasharray="5,3.5" opacity=".5"/>
+            <line x1="240" y1="174" x2="160" y2="118" stroke="#0f766e" stroke-width="1.8" stroke-dasharray="5,3.5" opacity=".5"/>
+            <circle r="5" fill="#14b8a8" opacity=".9">
+              <animateMotion dur="3s" repeatCount="indefinite" path="M80,70 L160,118 L240,70 L160,118 L80,174 L160,118"/>
+            </circle>
+            <rect x="134" y="103" width="52" height="30" rx="8" fill="rgba(15,118,110,.1)" stroke="#0f766e" stroke-width="1.5"/>
+            <text x="160" y="122" text-anchor="middle" fill="#0f766e" font-size="9.5" font-weight="700" font-family="Bricolage Grotesque">SW</text>
+            <g transform="translate(56,52)"><rect x="-22" y="-17" width="44" height="30" rx="7" fill="white" stroke="#ddd6c8" stroke-width="1.2"/><text x="0" y="-2" text-anchor="middle" fill="#1a1f1e" font-size="8.5" font-weight="600" font-family="Bricolage Grotesque">PC 1</text></g>
+            <g transform="translate(264,52)"><rect x="-22" y="-17" width="44" height="30" rx="7" fill="white" stroke="#ddd6c8" stroke-width="1.2"/><text x="0" y="-2" text-anchor="middle" fill="#1a1f1e" font-size="8.5" font-weight="600" font-family="Bricolage Grotesque">PC 2</text></g>
+            <g transform="translate(56,174)"><rect x="-22" y="-17" width="44" height="30" rx="7" fill="white" stroke="#ddd6c8" stroke-width="1.2"/><text x="0" y="-2" text-anchor="middle" fill="#1a1f1e" font-size="8.5" font-weight="600" font-family="Bricolage Grotesque">PC 3</text></g>
+            <g transform="translate(264,174)"><rect x="-22" y="-17" width="44" height="30" rx="7" fill="white" stroke="#ddd6c8" stroke-width="1.2"/><text x="0" y="-2" text-anchor="middle" fill="#1a1f1e" font-size="8.5" font-weight="600" font-family="Bricolage Grotesque">PC 4</text></g>
+            <text x="160" y="224" text-anchor="middle" fill="rgba(15,118,110,.4)" font-size="8" font-family="Bricolage Grotesque" letter-spacing="2.5">TOPOLOGIA A STELLA</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="feats rv-r">
+        <div class="feat">
+          <div class="feat-ic glass-sm" style="border-radius:12px">🖱️</div>
+          <div><h4>Drag & Drop intuitivo</h4><p>Trascina PC, switch, router, server, firewall sulla board. Collega tutto con cavi dritti o incrociati.</p></div>
+        </div>
+        <div class="feat">
+          <div class="feat-ic glass-sm" style="border-radius:12px">🔗</div>
+          <div><h4>Cablaggio reale</h4><p>Il gioco conosce la differenza tra cavo dritto e incrociato. Sbaglia il cavo e la rete non funziona.</p></div>
+        </div>
+        <div class="feat">
+          <div class="feat-ic glass-sm" style="border-radius:12px">📦</div>
+          <div><h4>Test con pacchetti animati</h4><p>Premi "Testa rete" e osserva i pacchetti attraversare i dispositivi in tempo reale.</p></div>
+        </div>
+        <div class="feat">
+          <div class="feat-ic glass-sm" style="border-radius:12px">✅</div>
+          <div><h4>Feedback istantaneo</h4><p>Ogni livello ha una checklist che si aggiorna automaticamente mentre costruisci.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW TO PLAY ═══════════════════════════════════════════ -->
+<section id="how" class="section-block" style="background:var(--sand-warm)">
+  <div class="wrap">
+    <div class="eyebrow rv">Tutorial</div>
+    <h2 class="sec-title rv">Come si <em style="color:var(--muted)">gioca</em></h2>
+    <p class="sec-body rv">Quattro passi semplici per costruire la tua prima rete funzionante.</p>
+
+    <div class="steps-grid">
+      <div class="step glass rv-s">
+        <div class="step-n">01</div>
+        <div class="step-tag">Setup</div>
+        <h3>Leggi lo scenario</h3>
+        <p>Ogni livello descrive una situazione reale — un ufficio, una scuola, un campus. Studia i requisiti nella checklist.</p>
+      </div>
+      <div class="step glass rv-s">
+        <div class="step-n">02</div>
+        <div class="step-tag">Costruzione</div>
+        <h3>Trascina i dispositivi</h3>
+        <p>Dal pannello laterale trascina PC, switch, router, server e firewall. Pianifica la topologia prima di cablare.</p>
+      </div>
+      <div class="step glass rv-s">
+        <div class="step-n">03</div>
+        <div class="step-tag">Cablaggio</div>
+        <h3>Collega con il cavo giusto</h3>
+        <p>Seleziona cavo dritto o incrociato, clicca il primo dispositivo poi il secondo. La checklist si aggiorna in tempo reale.</p>
+      </div>
+      <div class="step glass rv-s">
+        <div class="step-n">04</div>
+        <div class="step-tag">Test</div>
+        <h3>Testa e leggi i log</h3>
+        <p>Il simulatore invia pacchetti. Se tutto è corretto il livello si sblocca. Se c'è un problema la console ti dice dove e perché.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LEVELS ═══════════════════════════════════════════════ -->
+<section id="levels" class="section-block" style="background:var(--sand)">
+  <div class="wrap">
+    <div class="eyebrow rv">Progressione</div>
+    <h2 class="sec-title rv">10 Livelli + <strong>free mode</strong></h2>
+    <p class="sec-body rv">Dalla semplice LAN stellare al campus enterprise. E quando vuoi sperimentare senza vincoli, apri "Crea la tua rete".</p>
+
+    <div class="levels-grid">
+      <div class="lv glass-sm" style="--w:.10;border-radius:20px">
+        <div class="lv-head"><span class="lv-num">LV 01</span><div class="lv-bar"><div class="lv-fill"></div></div></div>
+        <div class="lv-title">LAN a stella</div>
+        <div class="lv-desc">Costruisci la tua prima rete a stella: 1 switch e 4 PC.</div>
+        <div class="lv-chips"><span class="chip">PC ×4</span><span class="chip">Switch ×1</span></div>
+      </div>
+      <div class="lv glass-sm" style="--w:.25;border-radius:20px">
+        <div class="lv-head"><span class="lv-num">LV 02</span><div class="lv-bar"><div class="lv-fill"></div></div></div>
+        <div class="lv-title">Internetworking LAN</div>
+        <div class="lv-desc">Collega due LAN attraverso un router. Primo livello 3 OSI.</div>
+        <div class="lv-chips"><span class="chip">Switch ×2</span><span class="chip">Router ×1</span></div>
+      </div>
+      <div class="lv glass-sm" style="--w:.35;border-radius:20px">
+        <div class="lv-head"><span class="lv-num">LV 03</span><div class="lv-bar"><div class="lv-fill"></div></div></div>
+        <div class="lv-title">Topologia ad anello</div>
+        <div class="lv-desc">6 PC in cerchio. Simula il passaggio del token ring.</div>
+        <div class="lv-chips"><span class="chip">PC ×6</span><span class="chip">Incrociato</span></div>
+      </div>
+      <div class="lv glass-sm" style="--w:.45;border-radius:20px">
+        <div class="lv-head"><span class="lv-num">LV 04</span><div class="lv-bar"><div class="lv-fill"></div></div></div>
+        <div class="lv-title">Perimetro LAN-WAN</div>
+        <div class="lv-desc">Primo firewall prima di uscire su Internet.</div>
+        <div class="lv-chips"><span class="chip">Firewall ×1</span><span class="chip">Internet</span></div>
+      </div>
+      <div class="lv glass-sm" style="--w:.60;border-radius:20px">
+        <div class="lv-head"><span class="lv-num">LV 05</span><div class="lv-bar"><div class="lv-fill"></div></div></div>
+        <div class="lv-title">Rete scolastica</div>
+        <div class="lv-desc">Switch centrale, 3 switch per aula, server, WAN protetta.</div>
+        <div class="lv-chips"><span class="chip">Switch ×4</span><span class="chip">Server ×1</span></div>
+      </div>
+      <div class="lv glass-sm" style="--w:.18;border-radius:20px">
+        <div class="lv-head"><span class="lv-num">LV 06</span><div class="lv-bar"><div class="lv-fill"></div></div></div>
+        <div class="lv-title">LAN client-server</div>
+        <div class="lv-desc">3 client e 1 server. Modello client-server base.</div>
+        <div class="lv-chips"><span class="chip">Server ×1</span><span class="chip">PC ×3</span></div>
+      </div>
+      <div class="lv glass-sm" style="--w:.52;border-radius:20px">
+        <div class="lv-head"><span class="lv-num">LV 07</span><div class="lv-bar"><div class="lv-fill"></div></div></div>
+        <div class="lv-title">Doppia LAN + protetta</div>
+        <div class="lv-desc">Due LAN via router, uscita Internet via firewall.</div>
+        <div class="lv-chips"><span class="chip">Router ×1</span><span class="chip">Firewall ×1</span></div>
+      </div>
+      <div class="lv glass-sm" style="--w:.75;border-radius:20px">
+        <div class="lv-head"><span class="lv-num">LV 08</span><div class="lv-bar"><div class="lv-fill"></div></div></div>
+        <div class="lv-title">Campus enterprise</div>
+        <div class="lv-desc">Scenario professionale completo: switch centrale, 4 switch di accesso, 8+ PC, 2 server, firewall, router e Internet.</div>
+        <div class="lv-chips"><span class="chip">PC ×8+</span><span class="chip">Switch ×5</span><span class="chip">Server ×2</span><span class="chip">Firewall ×1</span></div>
+      </div>
+      <div class="lv glass-sm" style="--w:.88;border-radius:20px">
+        <div class="lv-head"><span class="lv-num">LV 09</span><div class="lv-bar"><div class="lv-fill"></div></div></div>
+        <div class="lv-title">Pre-final campus</div>
+        <div class="lv-desc">Warm-up avanzato: stessa struttura enterprise con verifica completa PC-server-WAN.</div>
+        <div class="lv-chips"><span class="chip">PC ×8+</span><span class="chip">Switch ×5</span><span class="chip">Server ×2</span></div>
+      </div>
+      <div class="lv glass lv-boss" style="--w:1;border-radius:20px">
+        <div class="lv-head"><span class="lv-num">LV 10 — Final Boss 🏆</span><div class="lv-bar"><div class="lv-fill"></div></div></div>
+        <div class="lv-title">Final Boss: Campus enterprise</div>
+        <div class="lv-desc">Boss finale ridondato: core esteso, 12+ PC, 3 server e doppio perimetro WAN (2 firewall + 2 router).</div>
+        <div class="lv-chips"><span class="chip">PC ×8+</span><span class="chip">Switch ×5</span><span class="chip">Server ×2</span><span class="chip">Firewall ×1</span></div>
+      </div>
+      <div class="lv glass lv-boss" style="--w:1;border-radius:20px">
+        <div class="lv-head"><span class="lv-num">FREE MODE</span><div class="lv-bar"><div class="lv-fill"></div></div></div>
+        <div class="lv-title">Crea la tua rete</div>
+        <div class="lv-desc">Modalita libera: tutti i dispositivi disponibili, nessun timer, nessun quiz e nessun limite di cavi.</div>
+        <div class="lv-chips"><span class="chip">Sandbox</span><span class="chip">Tutti i device</span><span class="chip">Analisi libera</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CONCEPTS ══════════════════════════════════════════════ -->
+<section id="concepts" class="section-block" style="background:var(--sand-deep)">
+  <div class="wrap">
+    <div class="eyebrow rv">Apprendimento</div>
+    <h2 class="sec-title rv">Cosa <em style="color:var(--muted)">impari</em></h2>
+    <p class="sec-body rv">NetBuilder copre i contenuti reali di Sistemi e Reti — non come teoria, ma come pratica applicata.</p>
+
+    <div class="concepts-grid">
+      <div class="concept glass rv-s"><div class="concept-icon">🌐</div><h4>Topologie di rete</h4><p>Stella, anello, bus, albero, maglia. Ogni topologia ha vantaggi e limiti che esplori costruendo.</p></div>
+      <div class="concept glass rv-s"><div class="concept-icon">📡</div><h4>LAN, MAN, WAN</h4><p>Dalla rete locale all'interconnessione geografica. Capisci le differenze con router e firewall.</p></div>
+      <div class="concept glass rv-s"><div class="concept-icon">🔀</div><h4>Routing e commutazione</h4><p>Livello 2 con switch e MAC, livello 3 con router e IP. La differenza la vivi in prima persona.</p></div>
+      <div class="concept glass rv-s"><div class="concept-icon">🔒</div><h4>Sicurezza perimetrale</h4><p>Il firewall come linea di difesa. Impari dove posizionarlo e perché è fondamentale.</p></div>
+      <div class="concept glass rv-s"><div class="concept-icon">🖥️</div><h4>Modello client-server</h4><p>Costruire una LAN con server dedicato chiarisce il modello architetturale alla base di Internet.</p></div>
+      <div class="concept glass rv-s"><div class="concept-icon">🔌</div><h4>Cablaggio strutturato</h4><p>Cavo dritto vs incrociato. La scelta sbagliata rompe la rete — esattamente come nel mondo reale.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TEST ══════════════════════════════════════════════════ -->
+<section id="test" class="section-block" style="background:var(--sand)">
+  <div class="wrap">
+    <div class="eyebrow rv">Simulazione</div>
+    <h2 class="sec-title rv">Il test della <strong>rete</strong></h2>
+    <p class="sec-body rv">Quando premi "Testa rete" un pacchetto attraversa ogni dispositivo. Il risultato è immediato e preciso.</p>
+
+    <div class="demo-card glass rv">
+      <div class="pkt-row">
+        <div class="pkt-node"><div class="pkt-icon" id="pn0">💻</div><div class="pkt-lbl">PC Client</div></div>
+        <div class="pkt-arrow"></div>
+        <div class="pkt-node"><div class="pkt-icon" id="pn1">🔀</div><div class="pkt-lbl">Switch</div></div>
+        <div class="pkt-arrow"></div>
+        <div class="pkt-node"><div class="pkt-icon" id="pn2">🛡️</div><div class="pkt-lbl">Firewall</div></div>
+        <div class="pkt-arrow"></div>
+        <div class="pkt-node"><div class="pkt-icon" id="pn3">🔄</div><div class="pkt-lbl">Router</div></div>
+        <div class="pkt-arrow"></div>
+        <div class="pkt-node"><div class="pkt-icon" id="pn4">🌍</div><div class="pkt-lbl">Internet</div></div>
+      </div>
+      <div class="demo-grid">
+        <div class="demo-item"><h4>✅ Rete corretta</h4><p>Il pacchetto raggiunge la destinazione. "ACK ricevuto" e il livello si sblocca.</p></div>
+        <div class="demo-item"><h4>❌ Errore di topologia</h4><p>Il pacchetto si blocca al nodo problematico. La console indica esattamente dove.</p></div>
+        <div class="demo-item"><h4>🔄 Token ring</h4><p>Nei livelli ad anello il token circola in senso orario dimostrando il protocollo.</p></div>
+        <div class="demo-item"><h4>📋 Log dettagliati</h4><p>Ogni hop viene registrato con timestamp per tracciare il percorso del pacchetto.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══════════════════════════════════════════════════ -->
+<section class="cta-section" style="background:var(--sand-warm)">
+  <div class="wrap">
+    <div class="eyebrow rv" style="justify-content:center">Inizia ora</div>
+    <h2 class="sec-title rv">Pronto a costruire<br>la tua prima <strong>rete</strong>?</h2>
+    <p class="sec-body rv">Nessuna installazione. Nessuna configurazione.<br>Solo tu, una board vuota, 10 livelli da completare e una free mode per sperimentare.</p>
+    <div class="rv" style="display:flex;justify-content:center">
+      <a href="gioco.html" class="cta-primary" style="font-size:16px;padding:15px 32px">
+        <span class="shimmer"></span>
+        <span>🚀 Apri NetBuilder</span>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ════════════════════════════════════════════════ -->
+<footer>
+  <strong>NetBuilder</strong> — Amir e Ciocia · TPSIT Sistemi e Reti
+</footer>
+
 <script>
-/* ── GAME DARK MODE ──────────────────────────────────────── */
+/* ── CURSOR ──────────────────────────────────────────────── */
+const CUR=document.getElementById('cur');
+const DOT=CUR.querySelector('.dot');
+const RING=CUR.querySelector('.ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
+(function tc(){rx+=(mx-rx)*.14;ry+=(my-ry)*.14;DOT.style.cssText=`left:${mx}px;top:${my}px`;RING.style.cssText=`left:${rx}px;top:${ry}px`;requestAnimationFrame(tc)})();
+document.querySelectorAll('a,button,.lv,.concept,.step,.feat').forEach(el=>{
+  el.addEventListener('mouseenter',()=>document.body.classList.add('hov'));
+  el.addEventListener('mouseleave',()=>document.body.classList.remove('hov'));
+});
+
+/* ── NAV STUCK ───────────────────────────────────────────── */
+window.addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('stuck',scrollY>30),{passive:true});
+
+/* ── THREE.JS HERO ─ warm network on sand bg ─────────────── */
+(function(){
+  const canvas=document.getElementById('hero-canvas');
+  const section=document.getElementById('hero');
+  const W=section.clientWidth,H=section.clientHeight;
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setSize(W,H);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setClearColor(0xfbf7ef,0);
+
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(55,W/H,.1,150);
+  camera.position.set(0,0,36);
+
+  /* floating nodes */
+  const N=46;const nodes=[];
+  const geo=new THREE.SphereGeometry(.18,8,8);
+  for(let i=0;i<N;i++){
+    const accent=Math.random()>.5;
+    const mat=new THREE.MeshBasicMaterial({color:accent?0x14b8a8:0x0f766e,transparent:true,opacity:.35+Math.random()*.45});
+    const m=new THREE.Mesh(geo,mat);
+    const r=12+Math.random()*14;
+    const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
+    m.position.set(r*Math.sin(ph)*Math.cos(th),r*Math.sin(ph)*Math.sin(th),r*Math.cos(ph));
+    m.userData.b=m.position.clone();
+    m.userData.s=.18+Math.random()*.38;
+    m.userData.o=Math.random()*Math.PI*2;
+    scene.add(m);nodes.push(m);
+  }
+
+  /* edges */
+  const lm=new THREE.LineBasicMaterial({color:0x14b8a8,transparent:true,opacity:.1});
+  const conns=[];
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){
+    if(nodes[i].userData.b.distanceTo(nodes[j].userData.b)<9.5){
+      const g=new THREE.BufferGeometry().setFromPoints([nodes[i].position,nodes[j].position]);
+      const l=new THREE.Line(g,lm);scene.add(l);conns.push({l,g,i,j});
+    }
+  }
+
+  /* dust */
+  const pN=80,pG=new THREE.BufferGeometry(),pA=new Float32Array(pN*3);
+  for(let i=0;i<pN*3;i++)pA[i]=(Math.random()-.5)*64;
+  pG.setAttribute('position',new THREE.BufferAttribute(pA,3));
+  const pts=new THREE.Points(pG,new THREE.PointsMaterial({color:0x14b8a8,size:.08,transparent:true,opacity:.22}));
+  scene.add(pts);
+
+  let mmx=0,mmy=0;
+  window.addEventListener('mousemove',e=>{mmx=(e.clientX/innerWidth-.5)*2;mmy=(e.clientY/innerHeight-.5)*2;});
+
+  const clk=new THREE.Clock();
+  (function a(){
+    requestAnimationFrame(a);
+    const t=clk.getElapsedTime();
+    nodes.forEach(n=>{
+      n.position.x=n.userData.b.x+Math.sin(t*n.userData.s+n.userData.o)*.5;
+      n.position.y=n.userData.b.y+Math.cos(t*n.userData.s*.7+n.userData.o)*.5;
+    });
+    conns.forEach(({g,i,j})=>{g.setFromPoints([nodes[i].position,nodes[j].position]);g.computeBoundingSphere()});
+    pts.rotation.y=t*.018;
+    camera.position.x+=(mmx*4-camera.position.x)*.03;
+    camera.position.y+=(-mmy*3-camera.position.y)*.03;
+    camera.lookAt(scene.position);
+    renderer.render(scene,camera);
+  })();
+
+  new ResizeObserver(()=>{
+    const nW=section.clientWidth,nH=section.clientHeight;
+    renderer.setSize(nW,nH);camera.aspect=nW/nH;camera.updateProjectionMatrix();
+  }).observe(section);
+})();
+
+/* ── HEADLINE word animation ─────────────────────────────── */
+(function(){
+  const h=document.getElementById('hHead');
+  // parse text keeping accent span
+  const html=h.innerHTML;
+  // split into raw text and spans
+  const parser=new DOMParser();
+  const doc=parser.parseFromString('<p>'+html+'</p>','text/html');
+  const p=doc.querySelector('p');
+  const words=[];
+  p.childNodes.forEach(node=>{
+    if(node.nodeType===3){
+      node.textContent.trim().split(/\s+/).filter(Boolean).forEach(w=>{
+        const span=document.createElement('span');
+        span.className='word';span.textContent=w;
+        words.push(span);
+      });
+    } else if(node.nodeName==='SPAN'){
+      const span=document.createElement('span');
+      span.className='word accent';
+      span.textContent=node.textContent;
+      words.push(span);
+    }
+  });
+  h.innerHTML='';
+  words.forEach((w,i)=>{h.appendChild(w);if(i<words.length-1)h.appendChild(document.createTextNode(' '));});
+})();
+
+/* ── GSAP ────────────────────────────────────────────────── */
+gsap.registerPlugin(ScrollTrigger);
+
+/* Hero entrance */
+const tl=gsap.timeline({delay:.15});
+tl.to('#hBadge',{opacity:1,y:0,duration:.7,ease:'power3.out'})
+  .add(()=>{
+    document.querySelectorAll('.hero-hl .word').forEach((w,i)=>{
+      setTimeout(()=>w.classList.add('in'),(i*85));
+    });
+  },'-=.3')
+  .to('#hSub',{opacity:1,y:0,duration:.72,ease:'power3.out'},'-=.1')
+  .to('#hCtas',{opacity:1,y:0,duration:.6,ease:'back.out(1.4)'},'-=.3')
+  .to('#hStats',{opacity:1,y:0,duration:.6,ease:'power3.out'},'-=.2')
+  .to('#hPartners',{opacity:1,y:0,duration:.55,ease:'power3.out'},'-=.15')
+  .to('#scrollHint',{opacity:1,duration:.5},'-=.1');
+
+/* Scroll reveals */
+document.querySelectorAll('.rv').forEach((el,i)=>{
+  ScrollTrigger.create({trigger:el,start:'top 87%',
+    onEnter:()=>gsap.to(el,{opacity:1,y:0,duration:.8,delay:(i%5)*.05,ease:'power3.out'})
+  });
+});
+document.querySelectorAll('.rv-l').forEach(el=>{
+  ScrollTrigger.create({trigger:el,start:'top 83%',
+    onEnter:()=>gsap.to(el,{opacity:1,x:0,duration:.95,ease:'power3.out'})
+  });
+});
+document.querySelectorAll('.rv-r').forEach(el=>{
+  ScrollTrigger.create({trigger:el,start:'top 83%',
+    onEnter:()=>gsap.to(el,{opacity:1,x:0,duration:.95,ease:'power3.out'})
+  });
+});
+document.querySelectorAll('.rv-s').forEach((el,i)=>{
+  ScrollTrigger.create({trigger:el,start:'top 88%',
+    onEnter:()=>gsap.to(el,{opacity:1,scale:1,y:0,duration:.7,delay:(i%4)*.09,ease:'back.out(1.3)'})
+  });
+});
+
+/* Level cards */
+document.querySelectorAll('.lv').forEach((c,i)=>{
+  ScrollTrigger.create({trigger:c,start:'top 89%',
+    onEnter:()=>{
+      gsap.to(c,{opacity:1,y:0,duration:.6,delay:(i%4)*.07,ease:'power3.out'});
+      c.classList.add('vis');
+    }
+  });
+  c.addEventListener('mousemove',e=>{
+    const r=c.getBoundingClientRect();
+    const dx=(e.clientX-r.left-r.width/2)/(r.width/2);
+    const dy=(e.clientY-r.top-r.height/2)/(r.height/2);
+    c.style.transform=`perspective(700px) rotateX(${-dy*5}deg) rotateY(${dx*6}deg) scale(1.02) translateY(-4px)`;
+  });
+  c.addEventListener('mouseleave',()=>{c.style.transform=''});
+});
+
+/* Packet demo */
+(function(){
+  const ns=[0,1,2,3,4].map(i=>document.getElementById('pn'+i));
+  let c=0;
+  function t(){ns.forEach(n=>n.classList.remove('on'));if(c<ns.length){ns[c].classList.add('on');c++;setTimeout(t,520)}else{setTimeout(()=>{c=0;t()},1500)}}
+  t();
+})();
+
+/* Ripple */
+document.querySelectorAll('.cta-primary,.nav-cta').forEach(b=>{
+  b.addEventListener('click',function(e){
+    const r=this.getBoundingClientRect();
+    const s=Math.max(r.width,r.height);
+    const x=e.clientX-r.left-s/2,y=e.clientY-r.top-s/2;
+    const rp=document.createElement('span');
+    rp.className='rpl';rp.style.cssText=`width:${s}px;height:${s}px;left:${x}px;top:${y}px`;
+    this.appendChild(rp);setTimeout(()=>rp.remove(),600);
+  });
+});
+
+/* Hero parallax */
+window.addEventListener('scroll',()=>{
+  const y=scrollY,h=innerHeight;
+  if(y<h){
+    const hb=document.querySelector('.hero-body');
+    hb.style.transform=`translateY(${y*.12}px)`;
+    hb.style.opacity=Math.max(0,1-y/(h*.68));
+  }
+},{passive:true});
+
+/* ── DARK MODE TOGGLE ─────────────────────────────────────── */
 (function(){
   const STORAGE_KEY = 'nb-theme';
-  const btn  = document.getElementById('gameThemeToggle');
-  const icon = document.getElementById('themeIcon');
+  const logo = document.querySelector('.nav-logo');
+  const SUN_ICON = '<svg class="theme-icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.25" fill="none" stroke-width="2"/><path d="M12 2.75v2.4M12 18.85v2.4M4.35 4.35l1.7 1.7M17.95 17.95l1.7 1.7M2.75 12h2.4M18.85 12h2.4M4.35 19.65l1.7-1.7M17.95 6.05l1.7-1.7" fill="none" stroke-width="2" stroke-linecap="round"/></svg>';
+  const MOON_ICON = '<svg class="theme-icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.1 14.4A7.4 7.4 0 0 1 9.6 3.9 8.2 8.2 0 1 0 20.1 14.4Z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  const ICONS = {
-    light: '<svg class="theme-icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.25" fill="none" stroke-width="2"/><path d="M12 2.75v2.4M12 18.85v2.4M4.35 4.35l1.7 1.7M17.95 17.95l1.7 1.7M2.75 12h2.4M18.85 12h2.4M4.35 19.65l1.7-1.7M17.95 6.05l1.7-1.7" fill="none" stroke-width="2" stroke-linecap="round"/></svg>',
-    dark: '<svg class="theme-icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.1 14.4A7.4 7.4 0 0 1 9.6 3.9 8.2 8.2 0 1 0 20.1 14.4Z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-  };
-
+  /* 1. detect initial preference */
   function getInitialTheme(){
     const saved = localStorage.getItem(STORAGE_KEY);
     if(saved) return saved;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
 
+  /* 2. apply theme without animation (used at boot) */
   function applyTheme(theme, animate){
+    const html = document.documentElement;
     const isDark = theme === 'dark';
-    document.documentElement.classList.toggle('dark', isDark);
-    /* show the icon representing current mode (sun = you're in dark, moon = you're in light) */
-    icon.innerHTML = isDark ? ICONS.light : ICONS.dark;
-    btn.setAttribute('title', isDark ? 'Passa al tema chiaro' : 'Passa al tema scuro');
+    html.classList.toggle('dark', isDark);
+
+    /* update logo glyph: moon in light mode (click to go dark), sun in dark */
+    logo.innerHTML = isDark ? SUN_ICON : MOON_ICON;
 
     if(animate){
-      /* spin icon */
-      btn.classList.remove('spinning','pulse-ring');
-      void btn.offsetWidth;
-      btn.classList.add('spinning','pulse-ring');
-      btn.addEventListener('animationend', ()=>{
-        btn.classList.remove('spinning','pulse-ring');
-      }, {once:true});
+      const cls = isDark ? 'theme-pulse-dark' : 'theme-pulse-light';
+      logo.classList.remove('theme-pulse-dark','theme-pulse-light');
+      void logo.offsetWidth; /* reflow */
+      logo.classList.add(cls);
+      logo.addEventListener('animationend', ()=> logo.classList.remove(cls), {once:true});
 
-      /* full-page ripple */
-      const r = btn.getBoundingClientRect();
+      /* ripple from the logo across the whole page */
+      const r = logo.getBoundingClientRect();
       const cx = r.left + r.width/2, cy = r.top + r.height/2;
       const maxR = Math.hypot(Math.max(cx, innerWidth-cx), Math.max(cy, innerHeight-cy));
       const overlay = document.createElement('div');
       overlay.style.cssText = `
         position:fixed;top:0;left:0;width:100vw;height:100vh;
-        pointer-events:none;z-index:99999;overflow:hidden;
+        pointer-events:none;z-index:9998;overflow:hidden;
       `;
       const circle = document.createElement('div');
       circle.style.cssText = `
@@ -222,29 +1319,39 @@
         border-radius:50%;
         background:${isDark ? 'rgba(17,19,21,.94)' : 'rgba(251,247,239,.92)'};
         transform:translate(-50%,-50%);
-        transition:width 0.58s cubic-bezier(.4,0,.2,1),
-                   height 0.58s cubic-bezier(.4,0,.2,1),
-                   opacity 0.18s 0.48s ease;
+        transition:width 0.62s cubic-bezier(.4,0,.2,1),
+                   height 0.62s cubic-bezier(.4,0,.2,1),
+                   opacity 0.18s 0.52s ease;
       `;
       overlay.appendChild(circle);
       document.body.appendChild(overlay);
       requestAnimationFrame(()=>{
-        circle.style.width = circle.style.height = maxR * 2.2 + 'px';
+        circle.style.width = circle.style.height = maxR*2.2+'px';
       });
-      setTimeout(()=>{ circle.style.opacity = '0'; }, 480);
-      setTimeout(()=>{ overlay.remove(); }, 720);
+      setTimeout(()=>{ circle.style.opacity='0'; }, 520);
+      setTimeout(()=>{ overlay.remove(); }, 750);
     }
   }
 
-  /* boot */
+  /* 3. boot */
   const theme = getInitialTheme();
   applyTheme(theme, false);
 
-  /* toggle */
-  btn.addEventListener('click', ()=>{
+  /* 4. click handler */
+  logo.style.cursor = 'pointer';
+  logo.addEventListener('click', ()=>{
     const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
     localStorage.setItem(STORAGE_KEY, next);
     applyTheme(next, true);
+  });
+
+  /* 5. spin animation on hover */
+  logo.addEventListener('mouseenter', ()=>{
+    gsap.to(logo, {rotation: logo.parentElement.classList?.contains('dark') ? -15 : 15,
+      scale:1.12, duration:.35, ease:'back.out(2)'});
+  });
+  logo.addEventListener('mouseleave', ()=>{
+    gsap.to(logo, {rotation:0, scale:1, duration:.4, ease:'power3.out'});
   });
 })();
 </script>

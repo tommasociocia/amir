@@ -1,0 +1,252 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetBuilder - Costruisci la rete</title>
+  <script>
+    (function(){
+      var s=localStorage.getItem('nb-theme');
+      if(!s) s=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+      if(s==='dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">NB</span>
+      <div>
+        <h1>NetBuilder</h1>
+        <p>Laboratorio TPSIT sulle reti reali</p>
+      </div>
+    </div>
+
+    <nav class="level-tabs" id="levelTabs" aria-label="Livelli"></nav>
+    <div class="objective-wrap">
+            <button class="objective-btn" id="objectiveBtn" type="button">Obiettivi</button>
+      <div class="objective-panel" id="objectivePanel" aria-hidden="true"></div>
+    </div>
+
+    <div class="stats" aria-label="Statistiche">
+      <div class="stat"><span>Livello</span><strong id="statLevel">1</strong></div>
+      <div class="stat"><span>XP</span><strong id="statScore">0</strong></div>
+      <div class="stat"><span>Nodi</span><strong id="statDevices">0</strong></div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="toolbox">
+      <section>
+        <h2>Dispositivi 🧰</h2>
+        <div class="device-palette" id="devicePalette"></div>
+      </section>
+
+      <section>
+        <h2>Cavi 🔌</h2>
+        <div class="cable-tools">
+          <button class="cable-tool is-active" id="straightCable" type="button" data-cable="straight">
+            <span class="cable-sample straight"></span>
+            Dritto
+          </button>
+          <button class="cable-tool" id="crossCable" type="button" data-cable="cross">
+            <span class="cable-sample cross"></span>
+            Incrociato
+          </button>
+        </div>
+      </section>
+
+      <section class="quick-help">
+        <h2>Comandi ✨</h2>
+        <p>👉 Click su un dispositivo per inserirlo. 🔗 Click su due nodi per collegarli. 🖱️ Trascina un nodo per sistemarlo. 🗑️ Doppio click elimina.</p>
+      </section>
+
+      <section style="display:flex;justify-content:center;padding:10px 0 4px">
+        <button class="theme-toggle" id="gameThemeToggle" type="button" title="Cambia tema chiaro/scuro" aria-label="Cambia tema">
+          <span class="t-icon" id="themeIcon"></span>
+        </button>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <div class="workspace-toolbar">
+        <div>
+          <p class="eyebrow">Scenario</p>
+          <h2 id="levelTitle"></h2>
+        </div>
+        <div class="run-hud" aria-label="Sfide livello">
+          <div class="time-chip">
+            <span>Tempo</span>
+            <strong id="runTimer">00:00</strong>
+            <div class="time-bar"><span id="timeBar"></span></div>
+          </div>
+          <div class="budget-chip">
+            <span>Cavi</span>
+            <strong id="cableBudget">0/0</strong>
+          </div>
+          <div class="event-chip" id="eventChip" hidden>
+            <span>Evento</span>
+            <strong id="eventText">-</strong>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn secondary" id="hintBtn" type="button">💡 Indizio</button>
+          <button class="btn secondary" id="resetBtn" type="button">🔄 Reset</button>
+          <button class="btn primary" id="testBtn" type="button">🚀 Testa rete</button>
+        </div>
+      </div>
+
+      <div class="board-wrap" id="boardWrap">
+        <svg id="board" viewBox="0 0 1100 720" role="img" aria-label="Area di costruzione della rete">
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" class="grid-line"></path>
+            </pattern>
+            <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#263238" flood-opacity="0.18"></feDropShadow>
+            </filter>
+          </defs>
+          <rect width="1100" height="720" fill="url(#grid)"></rect>
+          <g id="cableLayer"></g>
+          <g id="packetLayer"></g>
+          <g id="deviceLayer"></g>
+        </svg>
+      </div>
+
+      <section class="console-panel" id="consolePanel">
+        <div class="console-resizer" id="consoleResizer" aria-hidden="true"></div>
+        <div class="console-header">
+          <p class="eyebrow">Console rete</p>
+        </div>
+        <div class="network-log" id="networkLog"></div>
+      </section>
+    </section>
+
+    <aside class="mission-panel">
+      <section class="mission-card">
+        <p class="eyebrow">Obiettivo</p>
+        <div id="objectiveText"></div>
+      </section>
+
+      <section class="mission-card">
+        <p class="eyebrow">Verifica</p>
+        <div class="checklist" id="checklist"></div>
+      </section>
+
+      <section class="mission-card">
+        <p class="eyebrow">Sfide bonus</p>
+        <div class="challenge-list" id="challengeList"></div>
+      </section>
+
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true">
+    <button type="button" data-action="move">🖱️ Sposta</button>
+    <button type="button" data-action="delete">🗑️ Elimina</button>
+  </div>
+
+  <dialog class="result-modal" id="resultModal">
+    <div class="result-icon" id="resultIcon"></div>
+    <h2 id="resultTitle"></h2>
+    <p id="resultBody"></p>
+    <div class="result-info" id="resultInfo"></div>
+    <button class="btn primary" id="resultBtn" type="button">Continua</button>
+  </dialog>
+
+  <script src="level1.js"></script>
+  <script src="level2.js"></script>
+  <script src="level3.js"></script>
+  <script src="level4.js"></script>
+  <script src="level5.js"></script>
+  <script src="level6.js"></script>
+  <script src="level7.js"></script>
+  <script src="level8.js"></script>
+  <script src="level9.js"></script>
+  <script src="level10.js"></script>
+  <script src="script.js"></script>
+<script>
+/* ── GAME DARK MODE ──────────────────────────────────────── */
+(function(){
+  const STORAGE_KEY = 'nb-theme';
+  const btn  = document.getElementById('gameThemeToggle');
+  const icon = document.getElementById('themeIcon');
+
+  const ICONS = {
+    light: '<svg class="theme-icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.25" fill="none" stroke-width="2"/><path d="M12 2.75v2.4M12 18.85v2.4M4.35 4.35l1.7 1.7M17.95 17.95l1.7 1.7M2.75 12h2.4M18.85 12h2.4M4.35 19.65l1.7-1.7M17.95 6.05l1.7-1.7" fill="none" stroke-width="2" stroke-linecap="round"/></svg>',
+    dark: '<svg class="theme-icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.1 14.4A7.4 7.4 0 0 1 9.6 3.9 8.2 8.2 0 1 0 20.1 14.4Z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
+
+  function getInitialTheme(){
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(saved) return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function applyTheme(theme, animate){
+    const isDark = theme === 'dark';
+    document.documentElement.classList.toggle('dark', isDark);
+    /* show the icon representing current mode (sun = you're in dark, moon = you're in light) */
+    icon.innerHTML = isDark ? ICONS.light : ICONS.dark;
+    btn.setAttribute('title', isDark ? 'Passa al tema chiaro' : 'Passa al tema scuro');
+
+    if(animate){
+      /* spin icon */
+      btn.classList.remove('spinning','pulse-ring');
+      void btn.offsetWidth;
+      btn.classList.add('spinning','pulse-ring');
+      btn.addEventListener('animationend', ()=>{
+        btn.classList.remove('spinning','pulse-ring');
+      }, {once:true});
+
+      /* full-page ripple */
+      const r = btn.getBoundingClientRect();
+      const cx = r.left + r.width/2, cy = r.top + r.height/2;
+      const maxR = Math.hypot(Math.max(cx, innerWidth-cx), Math.max(cy, innerHeight-cy));
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position:fixed;top:0;left:0;width:100vw;height:100vh;
+        pointer-events:none;z-index:99999;overflow:hidden;
+      `;
+      const circle = document.createElement('div');
+      circle.style.cssText = `
+        position:absolute;
+        left:${cx}px;top:${cy}px;
+        width:0;height:0;
+        border-radius:50%;
+        background:${isDark ? 'rgba(17,19,21,.94)' : 'rgba(251,247,239,.92)'};
+        transform:translate(-50%,-50%);
+        transition:width 0.58s cubic-bezier(.4,0,.2,1),
+                   height 0.58s cubic-bezier(.4,0,.2,1),
+                   opacity 0.18s 0.48s ease;
+      `;
+      overlay.appendChild(circle);
+      document.body.appendChild(overlay);
+      requestAnimationFrame(()=>{
+        circle.style.width = circle.style.height = maxR * 2.2 + 'px';
+      });
+      setTimeout(()=>{ circle.style.opacity = '0'; }, 480);
+      setTimeout(()=>{ overlay.remove(); }, 720);
+    }
+  }
+
+  /* boot */
+  const theme = getInitialTheme();
+  applyTheme(theme, false);
+
+  /* toggle */
+  btn.addEventListener('click', ()=>{
+    const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+    localStorage.setItem(STORAGE_KEY, next);
+    applyTheme(next, true);
+  });
+})();
+</script>
+</body>
+</html>
